@@ -2,12 +2,13 @@
 editor_options:
   chunk_output_type: console
 output:
-  html_document: default
+  html_document:
+    keep_md: yes
   pdf_document: default
-  word_document: default
 ---
 ##GitHub website: https://github.com/klbrundage 
 ##01-Assignment_Brundage_K
+
 
 ```{r}
 ##Printing/Showing the Statement "Hello, World"
@@ -29,9 +30,12 @@ sc
 View(sc)
 ```
 
+```{r setup, include=FALSE}
+##This code allows the Knit function to still work even with errors 
+knitr::opts_chunk$set(echo=TRUE,error=TRUE)
+```
 
 ```{r Mean Cost College}
-##Obtains the Mean Cost of College
 sc%>%summarize(mean_cost=mean(costt4_a,na.rm=TRUE))
 ```
 
