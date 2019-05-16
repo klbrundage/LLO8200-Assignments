@@ -1,0 +1,85 @@
+---
+title: "01-Assignment_Brundage_K"
+GitHub Website: https://github.com/klbrundage
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+  word_document: 
+    keep_md: yes
+    toc: yes
+---
+```{r}
+##Printing/Showing the Statement "Hello, World"
+print("Hello, World")
+```
+
+```{r load data}
+## Load in the data file sc - College Data File
+load("college.Rdata")
+```
+
+
+```{r look_at_data}
+## What does this data look like? Look at the first few rows, first few variables
+sc
+
+## This is commented as you might not always want to run it. Delete the "#" sign below in order to run the command. 
+
+View(sc)
+```
+
+```{r summarize}
+##Obtains the Mean Cost of College
+sc%>%summarize(mean_cost=mean(costt4_a,na.rm=TRUE))
+```
+
+
+##Stretch Items
+
+##1: Calculate the average earnings for individuals at the most selective colleges, then compare that with individuals at the least selective colleges in the dataset.
+```{r combining commands}
+## Gives the average earnings for very selective schools from the College Data File
+sc%>%filter(adm_rate<.1)%>%summarize(mean_earnings1=mean(md_earn_wne_p6,na.rm=TRUE))
+
+## Gives the average earnings for non-selective shcools from the College Data File
+sc%>%filter(adm_rate>.3)%>%summarize(mean_earnings2=mean(md_earn_wne_p6,na.rm=TRUE))
+```
+
+##2: 2.	Find a way to determine whether colleges with very high SAT scores tend to be larger or smaller than colleges with low SAT scores.
+```{r SAT Scores}
+## Left Side: Colleges with high SAT Scores and the average number of undergrads at those colleges
+sc%>%filter(sat_avg>1400)%>%summarize(mean_high=mean(ugds,na.rm=T))
+
+##Right Side: Colleges with low SAT Scores and the average number of undergrads at those colleges
+sc%>%filter(sat_avg<900)%>%summarize(mean_low=mean(ugds,na.rm=T))
+```
+
+##3:Plot the relationship between cost and debt. What do you see? Does this surprise you?
+
+##Answer to Q3:  There is a positive relationship between cost and debt.  The higher average cost for attending an instiution the higher the average debt one will incur. No, this does not surprise me, especially since I work in higher education and have experience in Financial Aid as well.  I have seen this trend over the past twenty-five years.
+```{r Cost v Debt}
+##Plots the relationship between cost of College and the debt from the College data file
+cd<-ggplot(data=sc, mapping=aes(x=debt_mdn, y=costt4_a))+
+    geom_point()+
+    geom_smooth()
+cd<-cd+xlab("Mean Debt")+ylab("Cost")
+cd
+```
+
+##4:Now, provide separate plots for cost and debt by control of the institution.
+```{r}
+#Left Side: plot showing the debt based on the control indicator of each institution in the College Data File
+cd1<-ggplot(data=sc)+
+    geom_smooth(mapping=aes(x=debt_mdn, y=control))
+cd1<-cd1+xlab("Mean Debt")+ylab("Control")
+cd1
+
+#Right Side: plot showing the cost based on the control indicator of each instituion in the College Data File
+cd2<-ggplot(data=sc)+
+    geom_smooth(mapping=aes(x=costt4_a, y=control))
+cd2<-cd2+xlab("Cost")+ylab("Control")
+cd2
+```
+
