@@ -139,7 +139,7 @@ pd<-pd%>%group_by(home_value,homeown_rate_level)%>% ## This code will take the h
 #Question 6:Calculate a summary measure of the error in your predictions.
 
 ```{r error_terms}
-##Calculates the Root Mean Squared Error (RMSE)
+##Calculates the Root Mean Squared Error (RMSE) of median household income and the average/mean of the predicted value of homeownership
 rmse_cond_mean_two <- rmse(pd$median_hh_inc,pd$pred_value_and_homeown)
 rmse_cond_mean_two
 ```
