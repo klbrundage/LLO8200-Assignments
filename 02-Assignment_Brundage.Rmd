@@ -1,0 +1,151 @@
+---
+title: "02-Assignment_Brundage"
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+GitHub: https://github.com/klbrundage
+Date: May 23, 2019
+Author: Kelley Brundage
+---
+
+```{r global_options, include = FALSE}
+knitr::opts_chunk$set(message=FALSE, 
+tidy.opts=list(width.cutoff=60)) 
+```
+
+#Libraries and Data Files
+```{r, warning=F}
+##Load libraries in order to successfully run the code below
+library(tidyverse)
+library(plotly)
+library(Metrics)
+```
+
+
+```{r data}
+##Load the County Level Dataset
+load("pd.Rdata")
+```
+
+```{r explain_date}
+## Full explanation of data in codebook
+load("pd_lab_explain.Rdata")
+
+#or use View
+#View(lab_explain)
+```
+
+##Assignment 02
+
+#For this assignment, you'll be working with the county level dataset to predict a home ownership rates using conditional means. You'll need to select the county-level characteristics that you think might be related to home ownership rates. Please complete the following steps:
+
+--------------------------------------------------------
+#Question 1: Calculate the mean of the outcome.
+```{r mean}
+##This code creates the mean of the home ownership value within the pd.data file and gives the output of the mean
+pd%>%summarize(mean_homeown=mean(homeown_rate,na.rm=TRUE))
+```
+
+--------------------------------------------------------
+#Question 2: Use your mean as a prediction: Create a new variable that consists of the mean of the outcome.
+
+```{r new variable for prediction}
+##Creation of a new Variable, homeownership, that shows the mean of median household income which has been labled homeown_rank.  No output will be relected as this is being added to the pd.data file as a new field.
+
+pd<-pd%>%mutate(homeown_rank=rank(median_hh_inc))
+```
+
+```{r place new variable in dataset}
+##Unconditional Average as a Predictor
+##This is also creating a new variable that will be added to the pd.data file as a new field reflecting the mean of median household income but this variable is named mean_home.
+
+pd <- pd%>%mutate(mean_home=mean(median_hh_inc,na.rm = T))
+```
+
+```{r Plot Average with Actual}
+##Plotting
+##Here we are plotting the median household income compared to the rank of median household income.
+gg<-ggplot(data=pd,aes(y=median_hh_inc,x=homeown_rank,color="Actual"))
+gg<-gg+geom_point(alpha=.5,size=.5)
+gg<-gg+geom_point(aes(y=mean_home,x=homeown_rank,
+                  color="Predicted: Unconditional Mean"),
+                  size=.5)
+gg<-gg+xlab("Rank of Median Household Income")+ylab("Median Household Income")
+gg<-gg+scale_color_manual(name="Type",
+                          values=c("Actual"="black",
+                          "Predicted: Unconditional Mean"="blue")
+                          )
+gg<-gg+theme(legend.position="bottom")
+
+gg
+
+##Save for later
+
+gg2<-gg
+```
+
+--------------------------------------------------------
+#Question 3: Calculate a summary measure of the errors for each observation-the difference between your prediction and the outcome.
+
+```{r error}
+##The code below will calculate a new variable
+pd<-pd%>%mutate(e2=median_hh_inc-mean_home)
+```
+
+```{r RMSE}
+##The Root Mean Squared Error (RMSE) shows the difference in median household income versus the mean of home predictor created in question #2 above
+rmse_uncond_mean<-rmse(pd$median_hh_inc, pd$mean_home)
+
+rmse_uncond_mean
+```
+
+--------------------------------------------------------
+#Question 4: Calculate the mean of the outcome at levels of a predictor variable.
+```{r Conditional Mean Single}
+##Conditional Average across a single variable which is called the home_value
+pd<-pd%>%mutate(home_value=ntile(median_home_val,4))
+
+table(pd$home_value)##this code will create a table of the new home_value variable
+
+pd<-pd%>%group_by(home_value)%>% ## This code will take the home_value variable and group it together by predictor
+  mutate(pred_value=mean(median_home_val))%>%  ##The mutate code will calculate mean at each level of predictor
+  ungroup()%>%  ##This code will ungroup the data
+  mutate(pred_value_rank=rank(pred_value,ties.method="random")) #This code will result in the rank by prediction, with ties sorted randomly
+
+```
+
+--------------------------------------------------------
+#Question 5: Use these conditional means as a prediction: for every county, use the conditional mean to provide a ''best guess" as to that county's level of the outcome.
+```{r quartiles}
+##Create a variable for quartiles for home ownership by creating a varable named homeown_rate_level.  The results will not show in this code as it is added the field to the pd.data file and putting the data together in 4 bins
+pd <- pd%>%mutate(homeown_rate_level=ntile(homeown_rate,4))
+```
+
+```{r mean of predictor}
+##Calculate the mean at each level of the predictor, which is the pred_inc_homeown variable based on the homeown_rate_level
+pd%>%group_by(homeown_rate_level)%>% summarise(pred_inc_homeown=mean(median_hh_inc))
+```
+
+The error term for our prediction using unconditional means will be stored in the variable $e1$. This variable will be equal to the actual value of per capita income `percapinc.2010` minues the mean value of per capita income `mean_percapinc.2010`. 
+```{r mean of each predictor}
+pd<-pd%>%group_by(home_value,homeown_rate_level)%>% ## This code will take the home_value variable and group it together by predictor
+  mutate(pred_value_and_homeown=mean(median_hh_inc))%>% ##The mutate code will calculate mean at each level of predictor
+  ungroup()%>% ##This code will ungroup the data
+  mutate(pred_value_and_homeown_rank=rank(pred_value_and_homeown,                                              ties.method="random"))##This code will result in the rank by prediction, with ties sorted randomly
+```
+
+--------------------------------------------------------
+#Question 6:Calculate a summary measure of the error in your predictions.
+
+```{r error_terms}
+##Calculates the Root Mean Squared Error (RMSE)
+rmse_cond_mean_two <- rmse(pd$median_hh_inc,pd$pred_value_and_homeown)
+rmse_cond_mean_two
+```
+
+```{r round RMSE}
+##This code will round the RMSE with no decimal places
+round(rmse_cond_mean_two,0)
+```
+
