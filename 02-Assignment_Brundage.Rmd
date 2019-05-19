@@ -10,6 +10,7 @@ Author: Kelley Brundage
 ---
 
 ```{r global_options, include = FALSE}
+##This code does not show in the final document but will assist with definining the margin cutoff point and wraps the text to the next line.
 knitr::opts_chunk$set(message=FALSE, 
 tidy.opts=list(width.cutoff=60)) 
 ```
