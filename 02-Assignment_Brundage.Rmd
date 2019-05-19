@@ -4,7 +4,7 @@ output:
   pdf_document: default
   word_document: default
   html_document: default
-GitHub: https://github.com/klbrundage
+GitHub: https://github.com/klbrundage/LLO8200-Assignments
 Date: May 23, 2019
 Author: Kelley Brundage
 ---
