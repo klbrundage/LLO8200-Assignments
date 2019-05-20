@@ -1,7 +1,12 @@
 ---
 title: "03-Assignment_BrundageK"
-output: html_document
-GitHub: https://github.com/klbrundage
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+Author: Kelley Brundage
+Date: May 23, 2019
+GitHub: https://github.com/klbrundage/LLO8200-Assignments
 ---
 
 ```{r global_options, include = FALSE}
@@ -10,7 +15,7 @@ knitr::opts_chunk$set(message=FALSE,
 tidy.opts=list(width.cutoff=60)) 
 ```
 
-# **Setup for plotting conditional means**
+# *Setup for plotting conditional means*
 
 We always start with a standard set of setup commands by loading the correct libraries. We will continue to work with `tidyverse`, and are adding `forcats` which helps us to deal with factor variables as well as `RColorBrewer' to handle colors.
 
@@ -29,7 +34,6 @@ library(knitr)
 load("attrition.Rdata")
 View (at)
 ```
-
 
 ## **Question 1: Create a graph that shows the distribution of monthly income.**
 
@@ -69,8 +73,7 @@ gg<-gg+ggtitle("Level of Monthly Income by Field of Education") ## Chart Title
 gg
 ```
 
-
-## Question 3: Create another graph that shows the average level of monthly income by field of education and gender.
+## **Question 3: Create another graph that shows the average level of monthly income by field of education and gender.**
 
 ```{r Level of Income by Education & Gender}
 ## Summarize by Monthly Income, Education Field and Gender
@@ -101,18 +104,16 @@ gg<-gg+ggtitle("Level of Monthly Income by Field of Education & Gender")##Title 
 gg
 ```
 
-## Question 4: Create a graph that shows average levels of monthly income by field of education, gender and job level (scale of 1-5, highest ranked employees are 5)
+## **Question 4: Create a graph that shows average levels of monthly income by field of education, gender and job level (scale of 1-5, highest ranked employees are 5)**
 
 ```{r Mincome by FoE, Gender & Job Level}
 ## Summarize by Monthly Income, Education Field, Gender & Job Level
 at_sum<-at%>%group_by(MonthlyIncome, EducationField, Gender, JobLevel)%>%
-  summarize(mincome=mean(MonthlyIncome))%>%
+  summarize(mincome=mean(MonthlyIncome))%>% ## gives the mean of Monthly Income
   ungroup()%>%
   arrange(mincome)
-## gives the mean of Monthly Income
 at_sum
 ```
-
 
 ```{r, echo=FALSE, results='hide', warning=FALSE, message=FALSE}
 ## The code below also uses Faceting which means we are making multiple graphs with the same structure. 
