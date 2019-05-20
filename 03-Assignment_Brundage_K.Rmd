@@ -1,0 +1,131 @@
+---
+title: "03-Assignment_BrundageK"
+output: html_document
+GitHub: https://github.com/klbrundage
+---
+
+```{r global_options, include = FALSE}
+##This code does not show in the final document but will assist with definining the margin cutoff point and wraps the text to the next line.
+knitr::opts_chunk$set(message=FALSE, 
+tidy.opts=list(width.cutoff=60)) 
+```
+
+# **Setup for plotting conditional means**
+
+We always start with a standard set of setup commands by loading the correct libraries. We will continue to work with `tidyverse`, and are adding `forcats` which helps us to deal with factor variables as well as `RColorBrewer' to handle colors.
+
+```{r, warning=F}
+##Load libraries in order to successfully run the code below
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(forcats)
+library(RColorBrewer)
+library(knitr)
+```
+
+## *Loading Data* 
+```{r load data}
+##The code below will oad the data file attrition and open the file so it can be viewed
+load("attrition.Rdata")
+View (at)
+```
+
+
+## **Question 1: Create a graph that shows the distribution of monthly income.**
+
+```{r monthly income histogram graph}
+##The code below creates a Histogram showing the distributin of monthly income from the attrition data file
+gg<-ggplot(at,aes(x=MonthlyIncome))
+gg<-gg+geom_histogram(binwidth = 20,fill="darkgreen")
+
+## Labels for the Histogram Chart
+gg<-gg+ylab("Count")+xlab("Monthly Income") ## x & y axis labels
+gg<-gg+theme(axis.text.x = element_text(angle = 60, hjust = 1))
+gg<-gg+ggtitle("Distribution of Monthly Income") ## Chart Title
+gg
+``` 
+
+## **Question 2: Create a graph that shows the average level of monthly income by field of education.**
+
+```{r Level of Income by Education}
+##The code below creates a new variable at_sum for the Monthly Income field
+at_sum<-at%>%group_by(MonthlyIncome, EducationField)%>%
+  summarize(mincome=mean(MonthlyIncome))%>%arrange(-mincome)
+  ## gives the mean of Monthly Income
+at_sum
+```
+
+```{r Bar Chart for Mincome by Field of Ed}
+##The code below creates a bar chart showing the average level of monthly income by field of education
+gg<-ggplot(at_sum,aes(x=EducationField,y=mincome,
+        fill=EducationField)) ##fills in the bars for each field of education
+## Bar plot, with unstacked (dodge)
+ gg<-gg+geom_bar(stat="identity",position="dodge")
+
+##Code that will label the Bar Chart
+gg<-gg+ylab("Mean of Monthly Income")+xlab("Education Field") ## x & y axis labels
+gg<-gg+theme(axis.text.x = element_text(angle = 60, hjust = 1))
+gg<-gg+ggtitle("Level of Monthly Income by Field of Education") ## Chart Title
+gg
+```
+
+
+## Question 3: Create another graph that shows the average level of monthly income by field of education and gender.
+
+```{r Level of Income by Education & Gender}
+## Summarize by Monthly Income, Education Field and Gender
+at_sum<-at%>%group_by(MonthlyIncome, EducationField, Gender)%>%
+  summarize(mincome=mean(MonthlyIncome))%>%arrange(-mincome)
+  ## gives the mean of Monthly Income
+at_sum
+```
+
+```{r bar chart by Gender}
+## The code below uses Faceting which means we are making multiple graphs with the same structure. 
+
+## The code arranges positions based on Education Field, color based on gender, and then split the graphic by Monthly Income. 
+gg<-ggplot(at_sum,aes(x=reorder(EducationField,mincome),
+                      y=mincome,
+                      fill=Gender))
+## Bar plot, with unstacked (dodge)
+ gg<-gg+geom_bar(stat="identity",position="dodge")
+  ## Separate out by Gender
+gg<-gg+facet_wrap(~Gender)
+  ## Change orientation to sideways
+gg<-gg+coord_flip()
+
+##Code that adds lables to the bar chart
+gg<-gg+ylab("Mean of Monthly Income")+xlab("Education Field")##lables the x & y axis
+gg<-gg+theme(axis.text.x = element_text(angle = 60, hjust = 1))##assigns the theme to the chart
+gg<-gg+ggtitle("Level of Monthly Income by Field of Education & Gender")##Title of the Chart
+gg
+```
+
+## Question 4: Create a graph that shows average levels of monthly income by field of education, gender and job level (scale of 1-5, highest ranked employees are 5)
+
+```{r Mincome by FoE, Gender & Job Level}
+## Summarize by Monthly Income, Education Field, Gender & Job Level
+at_sum<-at%>%group_by(MonthlyIncome, EducationField, Gender, JobLevel)%>%
+  summarize(mincome=mean(MonthlyIncome))%>%
+  ungroup()%>%
+  arrange(mincome)
+## gives the mean of Monthly Income
+at_sum
+```
+
+
+```{r, echo=FALSE, results='hide', warning=FALSE, message=FALSE}
+## The code below also uses Faceting which means we are making multiple graphs with the same structure. 
+
+## The code arranges positions based on Education Field, color based on gender, and then split the graphic by Monthly Income. 
+
+gg<-ggplot(at_sum,aes(x=fct_reorder(Gender,mincome),y=mincome))
+gg<-gg+geom_bar(stat="identity",aes(fill=EducationField),position="dodge")
+gg<-gg+facet_wrap(~Gender+JobLevel,ncol=4)
+
+##Code that adds lables to the Bar Chart
+gg<-gg+ylab("Mean of Monthly Income")+xlab("Gender")##labels the x & y axis
+gg<-gg+theme(axis.text.x = element_text(angle = 60, hjust = 1))##assigns the theme to the chart
+gg<-gg+ggtitle("Level of Monthly Income by Field of Education, Gender & Job Level")##Creates the Title for the Chart
+gg
+```
