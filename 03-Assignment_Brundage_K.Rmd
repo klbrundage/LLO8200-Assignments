@@ -1,12 +1,13 @@
 ---
 title: "03-Assignment_BrundageK"
+Date: "May 23, 2019"
+GitHub: "https://github.com/klbrundage/LLO8200-Assignments"
 output:
   pdf_document: default
   html_document: default
   word_document: default
-Author: Kelley Brundage
-Date: May 23, 2019
-GitHub: https://github.com/klbrundage/LLO8200-Assignments
+Author: "Kelley Brundage"
+
 ---
 
 ```{r global_options, include = FALSE}
