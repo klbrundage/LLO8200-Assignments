@@ -1,0 +1,185 @@
+---
+title: "04-Assignment_Brundage_K"
+Date: May 28, 2019
+GitHub: https://github.com/klbrundage/LLO8200-Assignments
+output:
+  pdf_document: default
+  html_document: default
+Author: Kelley Brundage
+---
+
+
+```{r global_options, include = FALSE}
+##This code does not show in the final document but will assist with definining the margin cutoff point and wraps the text to the next line.
+knitr::opts_chunk$set(message=FALSE, 
+  tidy.opts=list(width.cutoff=60)) 
+
+  my_pdf = function(file,width,height)
+  {pdf(file, width=width, height=height,pointsize=12)}
+```
+
+
+```{r setup, include=FALSE}
+##This code allows the Knit function to still work even with errors 
+knitr::opts_chunk$set(echo=TRUE,error=TRUE)
+```
+
+
+# *Setup for flat file data*
+
+We always start with a standard set of setup commands by loading the correct libraries. We will continue to work with `tidyverse` and others and will add 'haven' and 'readxl' in order to ensure we have tidy data.
+
+```{r, warning=F}
+##Load libraries in order to successfully run the code below
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(dplyr)
+library(tibble)
+library(evaluate)
+library(formatR)
+library(ggplot2)
+library(haven)
+library(knitr)
+library(readxl)
+```
+
+# **Assignment Questions for Week 4**
+
+## *Question#1: Panel data for OECD countries. Save as file name oecd.RData* 
+## http://www.wiley.com/legacy/wileychi/baltagi/supp/Gasoline.dat
+
+```{r Panel Data for OECD countries}
+#The code below will load in the OECD data set which is named 'Gasoline.dat' from the Wiley sysetem for "Econometric Analysis of Panel Data" by Badi H. Baltagi
+
+options(stringsAsFactors = F)
+Gasoline<-read_csv(file="http://www.wiley.com/legacy/wileychi/baltagi/supp/Gasoline.dat")
+
+##code to write the .dat file that was just read to a .txt file and tab delimited
+write_delim(Gasoline, path="Gasoline.txt",delim="\t")
+
+#To look at the dataset
+head(Gasoline)
+```
+
+Definition of OECD Country Dataset
+GASOLINE.DAT
+Source: Baltagi and Griffin (1983).
+Description: Panel Data, 18 OECD countries over 19 years, 1960 1978.
+Variables:        
+  (1) CO = Country.
+  (2) YR = Year.
+  (3) LN(Gas/Car): The logarithm of motor gasoline consumption per auto.
+  (4) LN(Y/N): The logarithm of real per capita income.
+  (5) LN(Pmg/Pgdp): The logarithm of real motor gasoline price.
+  (6) LN(Car/N): The logarithm of the stock of cars per capita.
+
+```{r Save as oecd.Rdata file }
+#The code below will save the file you just created above and name it exactly what you have in "" as that Rdata file
+save(Gasoline,file="oecd.Rdata")
+```
+
+
+## *Question#2: U.S. National Election Survey data from 2004. Save as file name nes.RData.* 
+## http://www.uta.edu/faculty/story/DataSets.htm
+
+Abstract on the US NES: {http://sda.berkeley.edu/Abstracts/NES2004.html}
+
+```{r US National Election Survey - SPSS Data File}
+#The code below will load in the U.S. National Election Survey data set from 2004 which is named 'NES2004.sav' from the University of Texas at Arlington, Department of Political Science DataSet website maintained by Professor Dale Story
+
+options(stringsAsFactors = F)
+NES2004<-read_spss(file="http://www.uta.edu/faculty/story/DataSets/NES2004.sav")
+
+#To look at the dataset
+head(NES2004)
+```
+
+To Understand the NES2004 dataset refer to the NES2004 codebook located at: http://www.uta.edu/faculty/story/DataSets/NES2004Codebook.pdf or to see the Variable Values within the datafile refer to: 
+
+```{r Save USNES2004 file}
+#The code below will save the file you just created above and name it exactly what you have in "" as that Rdata file
+save(NES2004,file="nes.Rdata")
+```
+
+
+## *Question#3: General social survey, student version. Save as file name gss.Rdata.*
+## http://www.uta.edu/faculty/story/DataSets.htm
+
+The Codebook located at the following website will explain the data included in the Student Version and Full Version files:  http://www.uta.edu/faculty/story/DataSets/GeneralSocialSurvey1996Codebook.txt
+
+Alert on the www.gss.norc.org website about the Student Dataset:
+  The SPSS student version, which can handle up to 50 variables and 1500 
+    cases, cannot open the GSS data files.
+
+  Please note that there are three missing values in the data:
+
+    IAP: Inapplicable. Respondents who are not asked to answer a specific 
+    question are assigned to IAP.
+    DK: Don't know
+    NA: No answer
+
+```{r General Social Survey}
+#The code below will load in the General Social Survey dataset which is named 'GeneralSocialSurvey1996ExcelDataStudentVersion.xls' from the from the University of Texas at Arlington, Department of Political Science DataSet website maintained by Professor Dale Story
+
+gss <- read_excel("04-Assignment Files/GeneralSocialSurvey1996ExcelDataStudentVersion.xls")
+head(gss)
+
+##Can also use the code below when loading from a website however it is currently causing errors when trying to knit
+
+##if(file.exists("gss.xls")==FALSE)
+##{download.file("http://www.uta.edu/faculty/story/DataSets/GeneralSocialSurvey1996ExcelDataStudentVersion.xls", destfile = "gss.xls")
+##  gss<-read_excel("gss.xls",skip=4,col_names=FALSE)
+##}else{gss<-read_excel("gss.xls",skip=4,col_names=FALSE)}
+
+```
+
+
+```{r Save gss file}
+##This code will save the gss file that was just imported above as a Rdata file
+save(gss,file="gss.Rdata")
+```
+
+
+## *Question#4: Replication file for “STATISTICAL DISCRIMINATION OR PREJUDICE?*
+A LARGE SAMPLE FIELD EXPERIMENT”. Open up and save the mainData.csv file. Save it as maindata.RData. Available here, look under the “Data and Analysis” tab.
+
+The Dowload URL is located on the following website: https://dataverse.harvard.edu/file.xhtml?persistentId=doi:10.7910/DVN/26410/05NHUX&version=1.0 - under the File Metadata section of the page is a Downlad URL section - use this in the code below
+
+```{r Load MainData file from Harvard Dataverse}
+#Load in the Maindata file from the dataverse Harvard dataverse site - The Review of Economics and Statistics, Harvard Kennedy School
+
+maindata<-read_csv(file="https://dataverse.harvard.edu/api/access/datafile/:persistentId?persistentId=doi:10.7910/DVN/26410/05NHUX")
+
+write_csv(maindata,path="maindata.csv")
+
+#Check it out
+head(maindata)
+```
+
+If needed: citation for this file
+Ewens, Michael; Tomlin, Bryan; Wang, Liang Choon, 2014, "Replication data for: Statistical Discrimination or Prejudice? A Large Sample Field Experiment", https://doi.org/10.7910/DVN/26410, Harvard Dataverse, V1, UNF:5:qzmNiccYm037ZSR4bK6u+A== [fileUNF]
+
+```{r Save the Lg Sample Field Experiement File}
+#The code below will save the file you just created above and name it exactly what you have in "" as that Rdata file
+save(maindata,file="maindata.Rdata")
+```
+
+
+## *Question#5: The Lalonde dataset, covering work experiences in the Panel Study of Income Dynamics (psid). Save as psid.RData* 
+
+You’ll find a description of the data that you’ll need here.
+http://users.nber.org/~rdehejia/data/psid_controls.txt 
+
+```{r Lalonde dataset}
+##Although the full txt file is given above go back to the index files located at http://users.nber.org/~rdehejia/data/ you will find there is a .dta file which is easier to convert/pull down and then save as the Rdata file
+psid_stata<-read_dta("https://users.nber.org/~rdehejia/data/psid_controls.dta")
+
+head(psid_stata)
+```
+
+
+```{r Save LaLonde dataset as Rdata file}
+#The code below will save the file you just created above and name it exactly what you have in "" as that Rdata file
+save(psid_stata,file="psid.Rdata")
+```
+
