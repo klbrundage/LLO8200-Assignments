@@ -8,6 +8,10 @@ output:
 Author: Kelley Brundage
 ---
 
+```{r setup, include=FALSE}
+##This code allows the Knit function to still work even with errors 
+knitr::opts_chunk$set(echo=TRUE,error=TRUE)
+```
 
 ```{r global_options, include = FALSE}
 ##This code does not show in the final document but will assist with definining the margin cutoff point and wraps the text to the next line.
@@ -17,13 +21,6 @@ knitr::opts_chunk$set(message=FALSE,
   my_pdf = function(file,width,height)
   {pdf(file, width=width, height=height,pointsize=12)}
 ```
-
-
-```{r setup, include=FALSE}
-##This code allows the Knit function to still work even with errors 
-knitr::opts_chunk$set(echo=TRUE,error=TRUE)
-```
-
 
 # *Setup for flat file data*
 
@@ -37,7 +34,6 @@ library(dplyr)
 library(tibble)
 library(evaluate)
 library(formatR)
-library(ggplot2)
 library(haven)
 library(knitr)
 library(readxl)
@@ -90,11 +86,13 @@ Abstract on the US NES: {http://sda.berkeley.edu/Abstracts/NES2004.html}
 options(stringsAsFactors = F)
 NES2004<-read_spss(file="http://www.uta.edu/faculty/story/DataSets/NES2004.sav")
 
+NES2004<-NES2004[ ,-(c(3))] #remove col 3 - Version column which is the same for every row and is not needed
+
 #To look at the dataset
 head(NES2004)
 ```
 
-To Understand the NES2004 dataset refer to the NES2004 codebook located at: http://www.uta.edu/faculty/story/DataSets/NES2004Codebook.pdf or to see the Variable Values within the datafile refer to: 
+To Understand the NES2004 dataset refer to the NES2004 codebook located at: http://www.uta.edu/faculty/story/DataSets/NES2004Codebook.pdf 
 
 ```{r Save USNES2004 file}
 #The code below will save the file you just created above and name it exactly what you have in "" as that Rdata file
@@ -121,15 +119,15 @@ Alert on the www.gss.norc.org website about the Student Dataset:
 ```{r General Social Survey}
 #The code below will load in the General Social Survey dataset which is named 'GeneralSocialSurvey1996ExcelDataStudentVersion.xls' from the from the University of Texas at Arlington, Department of Political Science DataSet website maintained by Professor Dale Story
 
-gss <- read_excel("04-Assignment Files/GeneralSocialSurvey1996ExcelDataStudentVersion.xls")
+gss<-read_excel("GeneralSocialSurvey1996ExcelDataStudentVersion.xls",skip=0,col_names = TRUE)
 head(gss)
 
 ##Can also use the code below when loading from a website however it is currently causing errors when trying to knit
 
-##if(file.exists("gss.xls")==FALSE)
-##{download.file("http://www.uta.edu/faculty/story/DataSets/GeneralSocialSurvey1996ExcelDataStudentVersion.xls", destfile = "gss.xls")
-##  gss<-read_excel("gss.xls",skip=4,col_names=FALSE)
-##}else{gss<-read_excel("gss.xls",skip=4,col_names=FALSE)}
+if(file.exists("gss.xls")==FALSE)
+{download.file("http://www.uta.edu/faculty/story/DataSets/GeneralSocialSurvey1996ExcelDataStudentVersion.xls", destfile = "gss.xls")
+gss<-read_excel("gss.xls",skip=4,col_names=FALSE)
+}else{gss<-read_excel("gss.xls",skip=4,col_names=FALSE)}
 
 ```
 
@@ -159,6 +157,53 @@ head(maindata)
 If needed: citation for this file
 Ewens, Michael; Tomlin, Bryan; Wang, Liang Choon, 2014, "Replication data for: Statistical Discrimination or Prejudice? A Large Sample Field Experiment", https://doi.org/10.7910/DVN/26410, Harvard Dataverse, V1, UNF:5:qzmNiccYm037ZSR4bK6u+A== [fileUNF]
 
+```{r Maindata Column labels}
+
+## This code will clean up the column labels to align directly with the variable definitions provided on the README.txt file located on the Harvard Dataverse website: https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/26410
+
+names(maindata)<-c("Id Number",
+                "City of Apt Location",
+                "Neighborhood Id",
+                "Rent: Craigslist Post",
+                "Rent Squared",
+                "Avg Neighborhood Rent",
+                "1 Bedroom Apt",
+                "Gender",
+                "Race",
+                "First Name",
+                "Last Name",
+                "Mom Mean Education",
+                "Freq of FN in 1990",
+                "Name - Muslim Sound",
+                "Is FM Rare",
+                "No Email",
+                "Positive: Email",
+                "Negative: Email",
+                "Email Sent Weekend",
+                "% Men in Neighborhood",
+                "% Black Neighborhood",
+                "% of City - Black",
+                "Landlord Rspns to Email",
+                "Response 1",
+                "Response 2",
+                "Response 3",
+                "Ratio of Rent to Avg",
+                "Ratio of Rent Squared",
+                "Applicant: Male",
+                "Applicant: Female",
+                "Applicant: White",
+                "Applicant: Black",
+                "Black interaction",
+                "Black inter Email",
+                "Black inter Neg Email",
+                "Black inter Pos Email",
+                "% Black inter Pos Email",
+                "% Black inter Neg Email",
+                "Treatment Id")
+
+head(maindata)
+```
+
 ```{r Save the Lg Sample Field Experiement File}
 #The code below will save the file you just created above and name it exactly what you have in "" as that Rdata file
 save(maindata,file="maindata.Rdata")
@@ -168,11 +213,33 @@ save(maindata,file="maindata.Rdata")
 ## *Question#5: The Lalonde dataset, covering work experiences in the Panel Study of Income Dynamics (psid). Save as psid.RData* 
 
 You’ll find a description of the data that you’ll need here.
-http://users.nber.org/~rdehejia/data/psid_controls.txt 
+https://users.nber.org/~rdehejia/nswdata2.html - under the PSID and CPS Data files paragraph at the bottom of the page
 
 ```{r Lalonde dataset}
-##Although the full txt file is given above go back to the index files located at http://users.nber.org/~rdehejia/data/ you will find there is a .dta file which is easier to convert/pull down and then save as the Rdata file
+##Although the full txt file is given above go back to the index files located at https://users.nber.org/~rdehejia/nswdata2.html you will find there is a .dta file which is easier to convert/pull down and then save as the Rdata file
+
+#PSID:Population Survey of Income Dynamics
+
 psid_stata<-read_dta("https://users.nber.org/~rdehejia/data/psid_controls.dta")
+
+psid_stata<-psid_stata[ ,-(c(1))] #remove col 1: Data ID which is the same for all rows
+
+head(psid_stata)
+```
+
+```{r PSID Column labels}
+
+## This code will clean up the column labels to align directly with the variable definitions provided under the Lalonde dataset
+names(psid_stata)<-c("Treatment",
+                "Age",
+                "Education",
+                "Black",
+                "Hispanic",
+                "Married",
+                "No Degree",
+                "Earnings in 1974",
+                "Earnings in 1975",
+                "Earnings in 1978")
 
 head(psid_stata)
 ```
