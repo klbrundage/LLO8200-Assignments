@@ -1,0 +1,190 @@
+---
+title: "05-Assignment_BrundageK"
+Date: "May 28, 2019"
+GitHub: "https://github.com/klbrundage/LLO8200-Assignments"
+output: html_document
+Author: "Kelley Brundage"
+---
+
+```{r setup, include=FALSE}
+##This code allows the Knit function to still work even with errors 
+knitr::opts_chunk$set(echo=TRUE,error=TRUE)
+```
+
+```{r global_options, include = FALSE}
+##This code does not show in the final document but will assist with definining the margin cutoff point and wraps the text to the next line.
+knitr::opts_chunk$set(message=FALSE, 
+  tidy.opts=list(width.cutoff=60)) 
+
+  my_pdf = function(file,width,height)
+  {pdf(file, width=width, height=height,pointsize=12)}
+```
+
+# *Setup for Linear Regression*
+
+We always start with a standard set of setup commands by loading the correct libraries. We will continue to work with `tidyverse` and others and will add 'haven' and 'readxl' in order to ensure we have tidy data.
+
+```{r, warning=F}
+##Load libraries in order to successfully run the code below
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(dplyr)
+library(evaluate)
+library(forcats)
+library(formatR)
+library(haven)
+library(knitr)
+library(ModelMetrics)
+library(modelr)
+library(readxl)
+library(tibble)
+```
+
+The ELS (Educational Longitudinal Survey) dataset is called `els`.
+
+```{r Load ElS Data}
+load("els.RData")
+```
+
+# **Assignment Questions for Week 5**
+
+In this assignment, you'll be asked to predict reading scores using the ELS data.
+
+##*Question#1: Create a regression that predicts reading scores as a function of SES, using the training data.*
+
+```{r Regression for Reading Scores}
+els%>%summarize(mean(bynels2r,na.rm=TRUE))
+  #na.rm=T specifies what to do with any missing data in the dataset
+
+#Code creates a Histogrsam for Reading Scores
+gg<-ggplot(els,aes(x=bynels2r))
+gg<-gg+geom_histogram()
+gg
+```
+
+```{r Density Plot for Reading Scores}
+gg<-ggplot(els,aes(x=bynels2r))
+gg<-gg+geom_density() #Density is the shape
+gg
+```
+
+```{r Reading Scores Prediction}
+modread1<-lm(bynels2r~byses1,data=els) 
+#bynels2r(reading scores) ~(as a function of) byses1(socioeconomic status), data=dataset(els)
+#outcome (reading scores) on left, predictor (ses) on right 
+
+summary(modread1)#shows the results of the regression
+```
+
+RESULTS:
+if SES is 0 then intercept(reading scores) are predicted to be 29 (Est. Std)
+as SES increases (every 1 unit change) reading scores are predicted to increase by 5.5 points (Est. Std)
+
+Reject the Null Hypothesis that the coefficient is zero
+
+Residual Standard Error (RMSE):  8.55 on df(15323)
+
+```{r Coefficient Data}
+confint(modread1)
+#This code only shows the coefficient Data
+```
+
+```{r Point Plot of ELS data}
+g1 <- ggplot(els,aes(x=byses1,y=bynels2r))+ #x is the SES and y is the Reading Score
+  geom_point(shape=1)+#specifies the points
+  geom_smooth(method = lm)
+g1
+```
+
+
+```{r RMSE for modread}
+els <- els%>%add_predictions(modread1)%>%rename(pred1=pred)
+  #predict using data in memory
+  
+rmse_read1<-modelr::rmse(modread1,els);rmse_read1
+#on average we are off by 8.5 points
+```
+
+Socio-economic status increases as reading scores are predicted to increase.  For every one unit increase in SES, reading scores are predicted to increase by $5.50.  The RMSE of 8.5 gives us a sense of how wrong the  model tends to be when using this one predictor.
+
+##*Question#2: Report the RMSE from a validation of your model using the testing data.*
+
+```{r Load ELS Test Dataset}
+load("els_test.Rdata")
+```
+
+
+```{r RMSE ELS Test Validation}
+modtest<-lm(bynels2r~byses1,data=els_test) 
+#bynels2r(reading scores) ~(as a function of) byses1(socioeconomic status), data=dataset(els)
+#outcome (reading scores) on left, predictor (ses) on right 
+
+summary(modtest)#shows the results of the regression
+```
+
+```{r Coefficient Data}
+confint(modtest)
+#This code only shows the coefficient Data
+```
+
+```{r RMSE for modtest}
+rmse_test<-modelr::rmse(modread1,els_test);rmse_test
+##*Question#3: Add another covariet to your model from 1.
+```
+
+```{r Plot ELS Test Results}
+ggtest <- ggplot(els_test,aes(x=byses1,y=bynels2r))+
+  geom_point(shape=1)+
+  geom_smooth(method = lm)
+ggtest
+```
+
+##*Question#3: Add another covariate to your model from 1.*
+
+```{r Multiple Regression}
+#adding parent education by income to the els data model
+modread2<-lm(bynels2r~as.factor(bypared)+ #second indep variable as a factor
+           byses1,
+          data=els)
+```
+
+
+```{r Summary of Model 2 Output}
+summary(modread2) 
+
+#Intercept = value of outcome when everything else is zero
+#linear relationship between Race and Reading Scores 
+#for every one unit in increase in Income, Reading Scores are predicted to increase by 1 point
+#have new variables (parental education) which came back with 7 levels - when you enter a factor/categorial variable into a regression it will split into a series of binary variables - for every level (except1 which is the comparison/omitted category) 1=less than HS to 8=Professional Degree
+```
+
+```{r RMSE for Multiple Regression Model}
+#how much of the variation in the dependent variable has been accounted for by these independent variables
+#Results should match the Residual Standar Error from the Summary above
+
+els<-els%>%add_predictions(modread2)%>%rename(pred2=pred)
+#the add_predictions functions will add this to the dataset - make sure to use a unique name or it will overwrite the previous prediction
+
+rmse_read2<-modelr::rmse(modread2,els);rmse_read2
+rmse_read1
+```
+
+
+##*Question#4: Again report the RMSE from a validation of your model using the testing data.  Did your model improve?  By how much?*
+
+```{r Prediction of ELS Test}
+## Generate a prediction from the ELS dataset based on the 2 models created above on the els_test dataset
+rmse_test_1<-modelr::rmse(modread1,els_test);rmse_test_1
+
+rmse_test_2<-modelr::rmse(modread2,els_test);rmse_test_2
+
+```
+
+```{r Prediction of the ELS}
+#Prediction from the ELS dataset based on the 2 models
+rmse_read1
+rmse_read2
+```
+
+There is a different in the values between the ELS dataset and the ELS Testing dataset but they are very minute.  Yes there is improvement but it is approximately .01 or less.  
+
