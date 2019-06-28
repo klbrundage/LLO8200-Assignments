@@ -49,7 +49,6 @@ knitr::opts_chunk$set(fig.path = "Figs/", message=FALSE, warning = F,
 
 ##Load libraries in order to successfully run the code below
 knitr::opts_chunk$set(echo = TRUE)
-suppressMessages(library(acs)) #accessing American Community Survey Data via census API
 suppressMessages(library(caret)) #Misc functions for training and plotting classification and     regression models.
 suppressMessages(library(dplyr)) #able to select, filter, organize, and manipulate data stored within an R data frame
 suppressMessages(library(evaluate)) #Parsing and Evaluation Tools that Provide More Details than the Default
@@ -61,7 +60,6 @@ suppressMessages(library(knitr)) #General-Purpose Package for Dynamic Report Gen
 suppressMessages(library(lubridate)) #Functions to work with date-times and time-spans: fast and user friendly parsing of date-time data, extraction and updating of components of a date-time
 suppressMessages(library(ModelMetrics)) #Collection of metrics for evaluating models written in C++ using 'Rcpp'.
 suppressMessages(library(modelr)) #Functions for modelling that help you seamlessly integrate modelling into a pipeline of data manipulation and visualisation.
-suppressMessages(library(noncensus)) #A collection of various regional information determined by the U.S. Census Bureau along with demographic data.
 suppressMessages(library(readxl)) #reads in Excel Files
 suppressMessages(library(rvest)) #scraping websites
 suppressMessages(library(tibble)) #Provides a 'tbl_df' class (the 'tibble') that provides stricter checking and better formatting than the traditional data frame.
