@@ -1,0 +1,230 @@
+---
+title: "08 - Assignment - BrundageK"
+author: "Kelley Brundage"
+date: "June 27, 2019"
+GitHub: "https://github.com/klbrundage/LLO8200-Assignments"
+output:
+  pdf_document: 
+    fig_caption: yes
+    fig_height: 3
+    fig_width: 5
+    keep_tex: yes
+    number_sections: yes
+    toc: yes
+  word_document: 
+    fig_caption: yes
+    fig_height: 3
+    fig_width: 5
+    keep_md: yes
+    toc: yes
+  html_document: 
+    fig_caption: yes
+    fig_height: 3
+    fig_width: 5
+    keep_md: yes
+    number_sections: yes
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+##This code allows the Knit function to still work even with errors 
+knitr::opts_chunk$set(echo=TRUE,error=TRUE)
+```
+
+```{r global_options, include = FALSE}
+##This code does not show in the final document but will assist with definining the margin cutoff point and wraps the text to the next line.
+knitr::opts_chunk$set(fig.path = "Figs/", message=FALSE, warning = F,
+  tidy.opts=list(width.cutoff=60)) 
+
+  my_pdf = function(file,width,height)
+  {pdf(file, width=width, height=height,pointsize=12)}
+```
+
+
+```{r, include=FALSE, warning=FALSE, eval=FALSE}
+
+#Setup for Scatterplots - Loading the Libraries
+
+#We always start with a standard set of setup commands by loading the correct libraries. We will continue to work with our existing libraries and will add 'caret' in order to evaluate the perforance of a classifier.
+
+##Load libraries in order to successfully run the code below
+knitr::opts_chunk$set(echo = TRUE)
+suppressMessages(library(acs)) #accessing American Community Survey Data via census API
+suppressMessages(library(caret)) #Misc functions for training and plotting classification and     regression models.
+suppressMessages(library(dplyr)) #able to select, filter, organize, and manipulate data stored within an R data frame
+suppressMessages(library(evaluate)) #Parsing and Evaluation Tools that Provide More Details than the Default
+suppressMessages(library(forcats)) #Tools for Working with Categorical Variables (Factors)
+suppressMessages(library(formatR)) #Provides a function tidy_source() to format R source code.
+suppressMessages(library(ggplot2)) #A system for 'declaratively' creating graphics, based on "The Grammar of Graphics".
+suppressMessages(library(haven)) #Import foreign statistical formats into R via the embedded 'ReadStat' C library
+suppressMessages(library(knitr)) #General-Purpose Package for Dynamic Report Generation in R 
+suppressMessages(library(lubridate)) #Functions to work with date-times and time-spans: fast and user friendly parsing of date-time data, extraction and updating of components of a date-time
+suppressMessages(library(ModelMetrics)) #Collection of metrics for evaluating models written in C++ using 'Rcpp'.
+suppressMessages(library(modelr)) #Functions for modelling that help you seamlessly integrate modelling into a pipeline of data manipulation and visualisation.
+suppressMessages(library(noncensus)) #A collection of various regional information determined by the U.S. Census Bureau along with demographic data.
+suppressMessages(library(readxl)) #reads in Excel Files
+suppressMessages(library(rvest)) #scraping websites
+suppressMessages(library(tibble)) #Provides a 'tbl_df' class (the 'tibble') that provides stricter checking and better formatting than the traditional data frame.
+suppressMessages(library(tidyverse)) #set of packages that work in harmony because they share common data representations and 'API' design
+```
+
+For this assignment, you'll be using the lemons dataset, which is a subset of the dataset used for a Kaggle competition described here: "https://www.kaggle.com/c/DontGetKicked/data"
+
+Your job is to predict which cars are most likely to be lemons.
+
+```{r Load the Carvana Data from Kaggle}
+training <- read_excel("C:/Users/klbru/OneDrive/R/LLO 8200 - Intro to Data Science/08-Assignment Files/training.xlsx")
+View(training)
+```
+
+
+Complete the following steps.
+
+#Question #1: Calculate the proportion of lemons in the training dataset using the IsBadBuy variable.
+
+```{r Create Table, echo=TRUE}
+table(training$IsBadBuy)
+#0: Did not get a car that is a lemon
+#1: Did get a car that is a lemon
+```
+
+```{r Create Proportion Table, echo=TRUE}
+prop.table(table(training$IsBadBuy))
+#88% did not get a car that is a lemon
+#12% did get a car that is a lemon
+```
+
+```{r descriptives, echo=TRUE}
+training%>%
+  count(IsBadBuy)%>%
+  mutate(p=prop.table(n))%>%
+  kable(format="markdown")
+```
+
+Based on the count of the data in the Is a Bad Buy column around 88% (87.7) of the sample were not lemons and about 12% (12.3) were lemons.
+
+#Question #2: Calculate the proportion of lemons by Make.
+
+```{r Conditional Mean by Make of Car, echo=TRUE}
+#Predictions using Conditional Means
+
+training%>%group_by(Make)%>%
+  summarise(mean(IsBadBuy))
+```
+
+
+```{r Cross-Tabulate, echo=TRUE}
+prop.table(table(training$Make,training$IsBadBuy),margin=1)
+  #prop=proportions table
+```
+
+```{r G Table by Make, echo=TRUE}
+
+g_table <- table(training$Make,training$IsBadBuy)
+g_table
+
+prop.table(g_table,margin=1)
+```
+
+
+#Question #3: Now, predict the probability of being a lemon using a linear model (lm(y~x), with covariates of your choosing from the training dataset.
+
+```{r Linear Model, echo=TRUE}
+# Is Bad Buy versus if the vehicle was an online sale, the age of the vehicle, wheeltype and make of the vehicle.
+
+lm_mod <- lm(training$IsBadBuy~training$VehicleAge+
+               training$IsOnlineSale+
+               training$WheelType+
+               training$Make,
+             data=training,y=T,na.exclude=T)
+summary(lm_mod)
+```
+
+
+#Question #4: Make predictions from the linear model.
+
+```{r LM Predictions, echo=TRUE}
+training <- training%>%
+  add_predictions(lm_mod)%>% #Add in predictions from the model
+  rename(pred_lm=pred)%>% #rename to be predictions from ols (lm)
+  mutate(pred_lm_out=ifelse(pred_lm>=.5,1,0)) #assign output if >= to .5 1=yes and 0=no
+```
+
+```{r LM Prediction Table, echo=TRUE}
+predlm_table <- table(training$IsBadBuy,training$pred_lm_out)
+
+predlm_table
+```
+
+```{r Probability Table Clean-up, echo=TRUE}
+prop.table(predlm_table)
+rownames(predlm_table) <- c("Predicted 0","Predicted 1")
+colnames(predlm_table) <- c("Actually 0", "Actually1")
+```
+
+Within the linear model approximately 86% of those cars predicted were actually not a lemon and 1% were lemons.  Of those cars in the linear model predicted to not be a lemon, 9% were not lemons and 3% were lemons.
+
+#Question #5: Now, predict the probability of being a lemon using a logistic regression (glm(y~x,family=binomial(link="logit"))), again using covariates of your choosing.
+
+```{r Logistic Model, echo=TRUE}
+logit_mod<-glm(training$IsBadBuy~
+             training$VehicleAge+
+               training$IsOnlineSale+
+               training$WheelType+
+               training$Make,
+            na.action=na.exclude,
+            family=binomial(link="logit"),
+               y=TRUE)
+
+summary(logit_mod)
+```
+
+#Question #6: Make predictions from the logit model. Make sure these are probabilities.
+
+```{r Predicted Probablities}
+training <- training%>%
+  mutate(pred_logitlm=predict(logit_mod, type="response"))
+```
+
+```{r}
+training <- training%>%
+  mutate(pred_logitlm_out=ifelse(pred_logitlm>=.3,1,0))
+    #adjusted the predicted value from .5 to .3
+
+training <- training%>%
+  mutate(pred_logitlm_out=as.factor(pred_logitlm_out))
+
+training <- training%>%
+  mutate(IsBadBuy=as.factor(training$IsBadBuy))
+```
+
+```{r Logit Prediction Table, echo=TRUE}
+predlogitlm_table <- table(training$IsBadBuy,training$pred_logitlm_out)
+
+predlogitlm_table
+```
+
+```{r Probability Logit Table Clean-up, echo=TRUE}
+prop.table(predlogitlm_table)
+rownames(predlogitlm_table) <- c("Predicted 0","Predicted 1")
+colnames(predlogitlm_table) <- c("Actually 0", "Actually1")
+```
+
+Within the predicted probabilities/Logit model approximately 86% of those cars predicted were actually not a lemon and 2% were lemons a slight but insignificant increase in lemons.  Of those cars in the logit model predicted to not be a lemon, 9% were not lemons and 3% were lemons.  
+
+#Question #7: Create a confusion matrix from your linear model and your logit model.
+
+```{r Confusion Matrix from Linear Model, echo=TRUE}
+ModelMetrics::confusionMatrix(training$IsBadBuy,training$pred_lm_out)
+caret::confusionMatrix(as.factor(training$IsBadBuy),as.factor(training$pred_lm_out))
+
+#to get the confusion matrix to work you need to make sure both variables are set as a factor
+```
+
+```{r Confusion Matrix from Logit Model, echo=TRUE}
+
+ModelMetrics::confusionMatrix(training$IsBadBuy,training$pred_logitlm_out)
+caret::confusionMatrix(as.factor(training$IsBadBuy),as.factor(training$pred_logitlm_out))
+
+#to get the confusion matrix to work you need to make sure both variables are set as a factor
+```
