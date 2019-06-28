@@ -4,37 +4,19 @@ author: "Kelley Brundage"
 date: "June 27, 2019"
 GitHub: "https://github.com/klbrundage/LLO8200-Assignments"
 output:
-  pdf_document: 
-    fig_caption: yes
-    fig_height: 3
-    fig_width: 5
-    keep_tex: yes
-    number_sections: yes
-    toc: yes
-  word_document: 
-    fig_caption: yes
-    fig_height: 3
-    fig_width: 5
-    keep_md: yes
-    toc: yes
-  html_document: 
-    fig_caption: yes
-    fig_height: 3
-    fig_width: 5
-    keep_md: yes
-    number_sections: yes
-    toc: yes
+  pdf_document: default
+  html_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
 ##This code allows the Knit function to still work even with errors 
-knitr::opts_chunk$set(echo=TRUE,error=TRUE)
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, results='hide', include=TRUE, messages=FALSE)
 ```
 
 ```{r global_options, include = FALSE}
 ##This code does not show in the final document but will assist with definining the margin cutoff point and wraps the text to the next line.
-knitr::opts_chunk$set(fig.path = "Figs/", message=FALSE, warning = F,
-  tidy.opts=list(width.cutoff=60)) 
+knitr::opts_chunk$set(fig.path = "Figs/", echo = FALSE, warning=FALSE, results='hide', include=FALSE, messages=FALSE, tidy.opts=list(width.cutoff=60)) 
 
   my_pdf = function(file,width,height)
   {pdf(file, width=width, height=height,pointsize=12)}
@@ -42,6 +24,7 @@ knitr::opts_chunk$set(fig.path = "Figs/", message=FALSE, warning = F,
 
 
 ```{r, include=FALSE, warning=FALSE, eval=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, results='hide', include=TRUE, messages=FALSE)
 
 #Setup for Scatterplots - Loading the Libraries
 
@@ -49,7 +32,7 @@ knitr::opts_chunk$set(fig.path = "Figs/", message=FALSE, warning = F,
 
 ##Load libraries in order to successfully run the code below
 knitr::opts_chunk$set(echo = TRUE)
-suppressMessages(library(caret)) #Misc functions for training and plotting classification and     regression models.
+suppressMessages(library(caret)) #Misc functions for training and plotting classification and regression models.
 suppressMessages(library(dplyr)) #able to select, filter, organize, and manipulate data stored within an R data frame
 suppressMessages(library(evaluate)) #Parsing and Evaluation Tools that Provide More Details than the Default
 suppressMessages(library(forcats)) #Tools for Working with Categorical Variables (Factors)
@@ -70,40 +53,46 @@ For this assignment, you'll be using the lemons dataset, which is a subset of th
 
 Your job is to predict which cars are most likely to be lemons.
 
-```{r Load the Carvana Data from Kaggle}
-training <- read_excel("C:/Users/klbru/OneDrive/R/LLO 8200 - Intro to Data Science/08-Assignment Files/training.xlsx")
-View(training)
+```{r Load Dataset from Carvana via Kaggle}
+library(readxl)
+training <- read_excel("training.xlsx")
 ```
 
 
-Complete the following steps.
-
 #Question #1: Calculate the proportion of lemons in the training dataset using the IsBadBuy variable.
 
-```{r Create Table, echo=TRUE}
+```{r Create Table, include=FALSE,error=FALSE}
 table(training$IsBadBuy)
-#0: Did not get a car that is a lemon
-#1: Did get a car that is a lemon
+
+##Results:
+#0: 64,007 Did not get a car that is a lemon
+#1: 8,976 Did get a car that is a lemon
 ```
 
 ```{r Create Proportion Table, echo=TRUE}
 prop.table(table(training$IsBadBuy))
+
+##Results:
 #88% did not get a car that is a lemon
 #12% did get a car that is a lemon
 ```
 
-```{r descriptives, echo=TRUE}
+```{r descriptives}
 training%>%
   count(IsBadBuy)%>%
   mutate(p=prop.table(n))%>%
   kable(format="markdown")
+
+##Results:
+#0: 64,007 = 88%
+#1: 8,976 = 12%
 ```
 
 Based on the count of the data in the Is a Bad Buy column around 88% (87.7) of the sample were not lemons and about 12% (12.3) were lemons.
 
 #Question #2: Calculate the proportion of lemons by Make.
 
-```{r Conditional Mean by Make of Car, echo=TRUE}
+```{r Conditional Mean by Make of Car}
 #Predictions using Conditional Means
 
 training%>%group_by(Make)%>%
@@ -111,23 +100,22 @@ training%>%group_by(Make)%>%
 ```
 
 
-```{r Cross-Tabulate, echo=TRUE}
+```{r Cross-Tabulate}
 prop.table(table(training$Make,training$IsBadBuy),margin=1)
   #prop=proportions table
 ```
 
-```{r G Table by Make, echo=TRUE}
-
+```{r G Table by Make}
+#Table showing by Make of car the number that were not lemons and the number that are lemons.
 g_table <- table(training$Make,training$IsBadBuy)
 g_table
 
-prop.table(g_table,margin=1)
 ```
 
 
 #Question #3: Now, predict the probability of being a lemon using a linear model (lm(y~x), with covariates of your choosing from the training dataset.
 
-```{r Linear Model, echo=TRUE}
+```{r Linear Model}
 # Is Bad Buy versus if the vehicle was an online sale, the age of the vehicle, wheeltype and make of the vehicle.
 
 lm_mod <- lm(training$IsBadBuy~training$VehicleAge+
@@ -138,21 +126,32 @@ lm_mod <- lm(training$IsBadBuy~training$VehicleAge+
 summary(lm_mod)
 ```
 
+In review of the data we see that being an online sale appears to be statistically significant.
 
 #Question #4: Make predictions from the linear model.
 
-```{r LM Predictions, echo=TRUE}
+After creating predictions, we're going to classify everyone with a predicted probablity above .5 as being predicted to get a car that is a lemon, while everyone with a predicted probability below .5 is predicted to not get one. We'll compare our classifications with the actual data. 
+
+```{r LM Predictions}
 training <- training%>%
   add_predictions(lm_mod)%>% #Add in predictions from the model
   rename(pred_lm=pred)%>% #rename to be predictions from ols (lm)
   mutate(pred_lm_out=ifelse(pred_lm>=.5,1,0)) #assign output if >= to .5 1=yes and 0=no
 ```
 
-```{r LM Prediction Table, echo=TRUE}
+```{r LM Prediction Table}
 predlm_table <- table(training$IsBadBuy,training$pred_lm_out)
 
 predlm_table
 ```
+
+Under the linear model prediction table we see the following:
+
+**Predicted Outcome: No Lemon**
+63,070 did not receive a car that was a lemon and 937 did receive a car that was a lemon
+
+**Predicted Outcom: Car is a Lemon**
+6,738 did not receive a car that was a lemon and 2,238 did recieve a car that was a lemon
 
 ```{r Probability Table Clean-up, echo=TRUE}
 prop.table(predlm_table)
@@ -160,11 +159,19 @@ rownames(predlm_table) <- c("Predicted 0","Predicted 1")
 colnames(predlm_table) <- c("Actually 0", "Actually1")
 ```
 
+**Results:**
+
+              Actually 0  Actually1
+  Predicted 0 0.86417385 0.01283861
+  Predicted 1 0.09232287 0.03066468
+
 Within the linear model approximately 86% of those cars predicted were actually not a lemon and 1% were lemons.  Of those cars in the linear model predicted to not be a lemon, 9% were not lemons and 3% were lemons.
 
 #Question #5: Now, predict the probability of being a lemon using a logistic regression (glm(y~x,family=binomial(link="logit"))), again using covariates of your choosing.
 
 ```{r Logistic Model, echo=TRUE}
+# Comparing if car is a Bad Buy (lemon) compared to Vehicle Age, If Online Sale, Wheel Type, and the Make of the Vehicle.
+
 logit_mod<-glm(training$IsBadBuy~
              training$VehicleAge+
                training$IsOnlineSale+
@@ -176,6 +183,8 @@ logit_mod<-glm(training$IsBadBuy~
 
 summary(logit_mod)
 ```
+
+In review of the Logit Model above we see that being an online sale appears to be statistically significant.
 
 #Question #6: Make predictions from the logit model. Make sure these are probabilities.
 
@@ -196,23 +205,37 @@ training <- training%>%
   mutate(IsBadBuy=as.factor(training$IsBadBuy))
 ```
 
-```{r Logit Prediction Table, echo=TRUE}
+```{r Logit Prediction Table}
 predlogitlm_table <- table(training$IsBadBuy,training$pred_logitlm_out)
 
 predlogitlm_table
 ```
 
-```{r Probability Logit Table Clean-up, echo=TRUE}
+Under the logit model prediction table we see the following:
+
+**Predicted Outcome: No Lemon**
+62,773 did not receive a car that was a lemon and 1,234 did receive a car that was a lemon
+
+**Predicted Outcom: Car is a Lemon**
+6,7627 did not receive a car that was a lemon and 2,349 did recieve a car that was a lemon
+
+```{r Probability Logit Table Clean-up}
 prop.table(predlogitlm_table)
 rownames(predlogitlm_table) <- c("Predicted 0","Predicted 1")
 colnames(predlogitlm_table) <- c("Actually 0", "Actually1")
 ```
 
+**Results:**
+            
+              Actually 0  Actually1
+  Predicted 0 0.86010441 0.01690805
+  Predicted 1 0.09080197 0.03218558
+
 Within the predicted probabilities/Logit model approximately 86% of those cars predicted were actually not a lemon and 2% were lemons a slight but insignificant increase in lemons.  Of those cars in the logit model predicted to not be a lemon, 9% were not lemons and 3% were lemons.  
 
 #Question #7: Create a confusion matrix from your linear model and your logit model.
 
-```{r Confusion Matrix from Linear Model, echo=TRUE}
+```{r Confusion Matrix from Linear Model}
 ModelMetrics::confusionMatrix(training$IsBadBuy,training$pred_lm_out)
 caret::confusionMatrix(as.factor(training$IsBadBuy),as.factor(training$pred_lm_out))
 
@@ -226,3 +249,24 @@ caret::confusionMatrix(as.factor(training$IsBadBuy),as.factor(training$pred_logi
 
 #to get the confusion matrix to work you need to make sure both variables are set as a factor
 ```
+
+**Results:**
+
+The two confusion matrices above represent counts of true & false presences and absences.
+
+For the Linear Model:
+      [,1] [,2]
+[1,] 63070 6738
+[2,]   937 2238
+
+For the Logit Model:
+    [,1]  [,2]
+[1,]    0     0
+[2,]    0 64007
+
+
+Based on the linear model there was a successful prediction of 63,070 as not being a lemon and 2,238 as being a lemon.  There is a 89% accuracy level with a 95% CI [.89,.89]
+
+Within the logit model it reflects a prediction of 0 cars not being a lemon and 64,007 as being a lemon.
+
+The sensitivity, specificity, positive predictive value and negative predictive value is calculated using the positive argument. Also, the prevalence of the "event" is computed from the data (unless passed in as an argument), the detection rate (the rate of true events also predicted to be events) and the detection prevalence (the prevalence of predicted events).
