@@ -1,37 +1,19 @@
 ---
-title: "08 - Assignment - BrundageK"
+title: "08-Assignment-Brundage_Kelley"
 author: "Kelley Brundage"
-date: "June 27, 2019"
+date: "6/27/2019"
 GitHub: "https://github.com/klbrundage/LLO8200-Assignments"
-output:
-  pdf_document: default
-  html_document: default
-  word_document: default
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
 ##This code allows the Knit function to still work even with errors 
-knitr::opts_chunk$set(echo = FALSE, warning=FALSE, results='hide', include=TRUE, messages=FALSE)
-```
-
-```{r global_options, include = FALSE}
-##This code does not show in the final document but will assist with definining the margin cutoff point and wraps the text to the next line.
-knitr::opts_chunk$set(fig.path = "Figs/", echo = FALSE, warning=FALSE, results='hide', include=FALSE, messages=FALSE, tidy.opts=list(width.cutoff=60)) 
-
-  my_pdf = function(file,width,height)
-  {pdf(file, width=width, height=height,pointsize=12)}
-```
-
-
-```{r, include=FALSE, warning=FALSE, eval=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning=FALSE, results='hide', include=TRUE, messages=FALSE)
-
-#Setup for Scatterplots - Loading the Libraries
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, results ='hide',include=TRUE,messages=FALSE)
 
 #We always start with a standard set of setup commands by loading the correct libraries. We will continue to work with our existing libraries and will add 'caret' in order to evaluate the perforance of a classifier.
 
-##Load libraries in order to successfully run the code below
-knitr::opts_chunk$set(echo = TRUE)
+##Load libraries in order to successfully run the code below - the suppressMessages coding will stop the install.packages information, etc.. from coming up in the Console and showing you what has run.
+
 suppressMessages(library(caret)) #Misc functions for training and plotting classification and regression models.
 suppressMessages(library(dplyr)) #able to select, filter, organize, and manipulate data stored within an R data frame
 suppressMessages(library(evaluate)) #Parsing and Evaluation Tools that Provide More Details than the Default
@@ -39,81 +21,273 @@ suppressMessages(library(forcats)) #Tools for Working with Categorical Variables
 suppressMessages(library(formatR)) #Provides a function tidy_source() to format R source code.
 suppressMessages(library(ggplot2)) #A system for 'declaratively' creating graphics, based on "The Grammar of Graphics".
 suppressMessages(library(haven)) #Import foreign statistical formats into R via the embedded 'ReadStat' C library
-suppressMessages(library(knitr)) #General-Purpose Package for Dynamic Report Generation in R 
+suppressMessages(library(knitr))#General-Purpose Package for Dynamic Report Generation in R 
+opts_chunk$set(comment=NA)
+def_hook <- knit_hooks$get("output")
+knit_hooks$set(output = function(x, options) {
+  out <- def_hook(x, options)
+  return(paste("\\begin{framed}\\begin{verbatim}", x, "\\end{verbatim}\\end{framed}", collapse = "\n"))
+})
+  
 suppressMessages(library(lubridate)) #Functions to work with date-times and time-spans: fast and user friendly parsing of date-time data, extraction and updating of components of a date-time
 suppressMessages(library(ModelMetrics)) #Collection of metrics for evaluating models written in C++ using 'Rcpp'.
 suppressMessages(library(modelr)) #Functions for modelling that help you seamlessly integrate modelling into a pipeline of data manipulation and visualisation.
+suppressMessages(library(pander))#provide a minimal and easy tool for rendering R objects
+
+
 suppressMessages(library(readxl)) #reads in Excel Files
 suppressMessages(library(rvest)) #scraping websites
 suppressMessages(library(tibble)) #Provides a 'tbl_df' class (the 'tibble') that provides stricter checking and better formatting than the traditional data frame.
 suppressMessages(library(tidyverse)) #set of packages that work in harmony because they share common data representations and 'API' design
+
+##Define My PDF setup
+#This code does not show in the final document but will assist with definining the margin cutoff point and wraps the text to the next line.
+knitr::opts_chunk$set(fig.path = "Figs/", results='hide', tidy.opts=list(width.cutoff=60)) 
+
+  my_pdf = function(file,width,height)
+  {pdf(file, width=width, height=height,pointsize=12)}
+
+##Load the Dataset
+#The code below will load the Carvana Training Dataset which houses the "lemon" or "IsBadBuy" indicator.
+
+library(readxl)
+training <- read_excel("training.xlsx")
+
 ```
+
 
 For this assignment, you'll be using the lemons dataset, which is a subset of the dataset used for a Kaggle competition described here: "https://www.kaggle.com/c/DontGetKicked/data"
 
 Your job is to predict which cars are most likely to be lemons.
 
-```{r Load Dataset from Carvana via Kaggle}
-library(readxl)
-training <- read_excel("training.xlsx")
+#**Question #1: Calculate the proportion of lemons in the training dataset using the IsBadBuy variable.**
+
+```{r Create Table}
+ibb <- table(training$IsBadBuy)
+
+pander(ibb)
+```
+*Table Results*
+----------------
+       0       1
+-------- -------
+  64,007   8,976
+----------------
+
+0: 64,007 Did not get a car that is a lemon
+
+1: 8,976 Did get a car that is a lemon
+
+```{r Create Proportion Table}
+pander(prop.table(table(training$IsBadBuy)))
+
 ```
 
+*Proportion Table Results*
+-------------------
+        0         1
+--------- ---------
+  0.87701   0.12299
+-------------------
 
-#Question #1: Calculate the proportion of lemons in the training dataset using the IsBadBuy variable.
+88% did not get a car that is a lemon
 
-```{r Create Table, include=FALSE,error=FALSE}
-table(training$IsBadBuy)
+12% did get a car that is a lemon
 
-##Results:
-#0: 64,007 Did not get a car that is a lemon
-#1: 8,976 Did get a car that is a lemon
-```
-
-```{r Create Proportion Table, echo=TRUE}
-prop.table(table(training$IsBadBuy))
-
-##Results:
-#88% did not get a car that is a lemon
-#12% did get a car that is a lemon
-```
 
 ```{r descriptives}
-training%>%
+descrip <- training%>%
   count(IsBadBuy)%>%
   mutate(p=prop.table(n))%>%
   kable(format="markdown")
 
-##Results:
-#0: 64,007 = 88%
-#1: 8,976 = 12%
+pander(descrip)
 ```
+
+*Descriptives*
+  * | IsBadBuy|     n|         p|
+  * |--------:|-----:|---------:|
+  * |        0| 64007| 0.8770125|
+  * |        1|  8976| 0.1229875|
+
+0: 64,007 = 88%
+
+1: 8,976 = 12%
 
 Based on the count of the data in the Is a Bad Buy column around 88% (87.7) of the sample were not lemons and about 12% (12.3) were lemons.
 
-#Question #2: Calculate the proportion of lemons by Make.
+
+#**Question #2: Calculate the proportion of lemons by Make.**
 
 ```{r Conditional Mean by Make of Car}
 #Predictions using Conditional Means
 
-training%>%group_by(Make)%>%
+make <- training%>%group_by(Make)%>%
   summarise(mean(IsBadBuy))
+
+pander(make)
 ```
 
+*Results by Make*
+-------------------------------
+Make             mean(IsBadBuy)
+-------------- ----------------
+ACURA                  0.272727
+
+BUICK                  0.156944
+
+CADILLAC               0.151515
+
+CHEVROLET              0.097461
+
+CHRYSLER               0.128562
+
+DODGE                  0.103237
+
+FORD                   0.154091
+
+GMC                    0.115562
+
+HONDA                  0.108652
+
+HUMMER                 0.000000
+
+HYUNDAI                0.128658
+
+INFINITI               0.333333
+
+ISUZU                  0.067164
+
+JEEP                   0.154501
+
+KIA                    0.117552
+
+LEXUS                  0.354839
+
+LINCOLN                0.298969
+
+MAZDA                  0.161389
+
+MERCURY                0.169770
+
+MINI                   0.333333
+
+MITSUBISHI             0.119417
+
+NISSAN                 0.159712
+
+OLDSMOBILE             0.201646
+
+PLYMOUTH               0.500000
+
+PONTIAC                0.119070
+
+SATURN                 0.141470
+
+SCION                  0.085271
+
+SUBARU                 0.214286
+
+SUZUKI                 0.146837
+
+TOYOTA                 0.099650
+
+TOYOTA SCION           0.000000
+
+VOLKSWAGEN             0.141791
+
+VOLVO                  0.000000
+-------------------------------
 
 ```{r Cross-Tabulate}
-prop.table(table(training$Make,training$IsBadBuy),margin=1)
+makeper <- prop.table(table(training$Make,training$IsBadBuy),margin=1)
   #prop=proportions table
+
+print(makeper)
 ```
+
+*Cross-Tabulate by Make*
+                        0          1
+  ACURA        0.72727273 0.27272727
+  BUICK        0.84305556 0.15694444
+  CADILLAC     0.84848485 0.15151515
+  CHEVROLET    0.90253942 0.09746058
+  CHRYSLER     0.87143826 0.12856174
+  DODGE        0.89676270 0.10323730
+  FORD         0.84590889 0.15409111
+  GMC          0.88443760 0.11556240
+  HONDA        0.89134809 0.10865191
+  HUMMER       1.00000000 0.00000000
+  HYUNDAI      0.87134180 0.12865820
+  INFINITI     0.66666667 0.33333333
+  ISUZU        0.93283582 0.06716418
+  JEEP         0.84549878 0.15450122
+  KIA          0.88244767 0.11755233
+  LEXUS        0.64516129 0.35483871
+  LINCOLN      0.70103093 0.29896907
+  MAZDA        0.83861083 0.16138917
+  MERCURY      0.83023001 0.16976999
+  MINI         0.66666667 0.33333333
+  MITSUBISHI   0.88058252 0.11941748
+  NISSAN       0.84028777 0.15971223
+  OLDSMOBILE   0.79835391 0.20164609
+  PLYMOUTH     0.50000000 0.50000000
+  PONTIAC      0.88093001 0.11906999
+  SATURN       0.85852982 0.14147018
+  SCION        0.91472868 0.08527132
+  SUBARU       0.78571429 0.21428571
+  SUZUKI       0.85316265 0.14683735
+  TOYOTA       0.90034965 0.09965035
+  TOYOTA SCION 1.00000000 0.00000000
+  VOLKSWAGEN   0.85820896 0.14179104
+  VOLVO        1.00000000 0.00000000
 
 ```{r G Table by Make}
 #Table showing by Make of car the number that were not lemons and the number that are lemons.
 g_table <- table(training$Make,training$IsBadBuy)
-g_table
+print(g_table)
 
 ```
 
+*G-Table by Make*
+                  0     1
+  ACURA           24     9
+  BUICK          607   113
+  CADILLAC        28     5
+  CHEVROLET    15567  1681
+  CHRYSLER      7707  1137
+  DODGE        11579  1333
+  FORD          9563  1742
+  GMC            574    75
+  HONDA          443    54
+  HUMMER           1     0
+  HYUNDAI       1578   233
+  INFINITI        28    14
+  ISUZU          125     9
+  JEEP          1390   254
+  KIA           2192   292
+  LEXUS           20    11
+  LINCOLN         68    29
+  MAZDA          821   158
+  MERCURY        758   155
+  MINI            16     8
+  MITSUBISHI     907   123
+  NISSAN        1752   333
+  OLDSMOBILE     194    49
+  PLYMOUTH         1     1
+  PONTIAC       3751   507
+  SATURN        1857   306
+  SCION          118    11
+  SUBARU          22     6
+  SUZUKI        1133   195
+  TOYOTA        1030   114
+  TOYOTA SCION     1     0
+  VOLKSWAGEN     115    19
+  VOLVO           37     0
+  
+  
 
-#Question #3: Now, predict the probability of being a lemon using a linear model (lm(y~x), with covariates of your choosing from the training dataset.
+#**Question #3: Now, predict the probability of being a lemon using a linear model (lm(y~x), with covariates of your choosing from the training dataset.**
 
 ```{r Linear Model}
 # Is Bad Buy versus if the vehicle was an online sale, the age of the vehicle, wheeltype and make of the vehicle.
@@ -123,12 +297,18 @@ lm_mod <- lm(training$IsBadBuy~training$VehicleAge+
                training$WheelType+
                training$Make,
              data=training,y=T,na.exclude=T)
-summary(lm_mod)
+```
+
+```{r Call LM Summary}
+lm(formula = training$IsBadBuy ~ training$VehicleAge + training$IsOnlineSale + 
+    training$WheelType + training$Make, data = training, y = T, 
+    na.exclude = T)
 ```
 
 In review of the data we see that being an online sale appears to be statistically significant.
 
-#Question #4: Make predictions from the linear model.
+
+#**Question #4: Make predictions from the linear model.**
 
 After creating predictions, we're going to classify everyone with a predicted probablity above .5 as being predicted to get a car that is a lemon, while everyone with a predicted probability below .5 is predicted to not get one. We'll compare our classifications with the actual data. 
 
@@ -142,24 +322,30 @@ training <- training%>%
 ```{r LM Prediction Table}
 predlm_table <- table(training$IsBadBuy,training$pred_lm_out)
 
-predlm_table
+print(predlm_table)
 ```
 
-Under the linear model prediction table we see the following:
+*LM Prediction Table*
+        0     1
+  0 63070   937
+  1  6738  2238
 
-**Predicted Outcome: No Lemon**
+*Predicted Outcome: No Lemon*
 63,070 did not receive a car that was a lemon and 937 did receive a car that was a lemon
 
-**Predicted Outcom: Car is a Lemon**
+*Predicted Outcom: Car is a Lemon*
 6,738 did not receive a car that was a lemon and 2,238 did recieve a car that was a lemon
 
-```{r Probability Table Clean-up, echo=TRUE}
-prop.table(predlm_table)
+```{r Probability Table Clean-up}
+#This code will add row and column names to the LM Table you created above.
+
 rownames(predlm_table) <- c("Predicted 0","Predicted 1")
 colnames(predlm_table) <- c("Actually 0", "Actually1")
+
+print(predlm_table)
 ```
 
-**Results:**
+**LM Probability Results:**
 
               Actually 0  Actually1
   Predicted 0 0.86417385 0.01283861
@@ -167,9 +353,10 @@ colnames(predlm_table) <- c("Actually 0", "Actually1")
 
 Within the linear model approximately 86% of those cars predicted were actually not a lemon and 1% were lemons.  Of those cars in the linear model predicted to not be a lemon, 9% were not lemons and 3% were lemons.
 
-#Question #5: Now, predict the probability of being a lemon using a logistic regression (glm(y~x,family=binomial(link="logit"))), again using covariates of your choosing.
 
-```{r Logistic Model, echo=TRUE}
+#**Question #5: Now, predict the probability of being a lemon using a logistic regression (glm(y~x,family=binomial(link="logit"))), again using covariates of your choosing.**
+
+```{r Logistic Model}
 # Comparing if car is a Bad Buy (lemon) compared to Vehicle Age, If Online Sale, Wheel Type, and the Make of the Vehicle.
 
 logit_mod<-glm(training$IsBadBuy~
@@ -184,19 +371,39 @@ logit_mod<-glm(training$IsBadBuy~
 summary(logit_mod)
 ```
 
-In review of the Logit Model above we see that being an online sale appears to be statistically significant.
-
-#Question #6: Make predictions from the logit model. Make sure these are probabilities.
-
-```{r Predicted Probablities}
-training <- training%>%
-  mutate(pred_logitlm=predict(logit_mod, type="response"))
+```{r logit model hook}
+glm(formula = training$IsBadBuy ~ training$VehicleAge + training$IsOnlineSale + 
+    training$WheelType + training$Make, family = binomial(link = "logit"), 
+    na.action = na.exclude, y = TRUE)
 ```
 
-```{r}
+
+In review of the Logit Model above we see that being an online sale appears to be statistically significant.
+
+
+#**Question #6: Make predictions from the logit model. Make sure these are probabilities.**
+
+```{r Predicted Probabilities}
+training <- training%>%
+  mutate(pred_logitlm=predict(logit_mod,type = "response"))
+
+#prediction from logit and will use the predict command to specify what type of response I want = probabilities by saying type = response (the predicted probability)
+```
+
+```{r Summary of Pred Prob}
+print(summary(training$pred_logitlm))
+```
+**Summary of Predicted Prbabilities from the Logit Model**
+     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+0.0000008 0.0600094 0.0838478 0.1229875 0.1241718 0.9440598 
+
+What we are seeing in our sumamry of predicted probabilities for the logit model, is that it goes from a minimum of about .00-- it's 0.0000008-- we can convert that to 0%. It goes up to a maximum of 0.944, but notice that it doesn't go above 1. So it is definitely bounded by 0 and 1. Our median is about .84, and our mean is about 0.1242. Now, so the average predicted probability is about the same as the predicted probability in the overall data set, so that's pretty good.
+
+```{r Convert Predictions}
+##running the prediction on a threshold other than .5
+
 training <- training%>%
   mutate(pred_logitlm_out=ifelse(pred_logitlm>=.3,1,0))
-    #adjusted the predicted value from .5 to .3
 
 training <- training%>%
   mutate(pred_logitlm_out=as.factor(pred_logitlm_out))
@@ -205,27 +412,46 @@ training <- training%>%
   mutate(IsBadBuy=as.factor(training$IsBadBuy))
 ```
 
+```{r Logit LM Out Table}
+pander(table(training$pred_logitlm_out))
+```
+
+----------------
+       0       1
+-------- -------
+  69,400   3,583
+----------------
+
+And it looks like we have a similar problem to what we had before. Looking at the results, we can see we've got 69,400 classified as a 0 - not a lemon, 3,583 were classified as a 1 - a lemon. So it appears that this is not a particularly sensitive classifier.
+
+Under the logit model prediction table we see the following:
 ```{r Logit Prediction Table}
 predlogitlm_table <- table(training$IsBadBuy,training$pred_logitlm_out)
 
-predlogitlm_table
+print(predlogitlm_table)
 ```
 
-Under the logit model prediction table we see the following:
+       0     1
+  0 62773  1234
+  1  6627  2349
 
-**Predicted Outcome: No Lemon**
+*Predicted Outcome: No Lemon*
 62,773 did not receive a car that was a lemon and 1,234 did receive a car that was a lemon
 
-**Predicted Outcom: Car is a Lemon**
+*Predicted Outcom: Car is a Lemon*
 6,7627 did not receive a car that was a lemon and 2,349 did recieve a car that was a lemon
 
+The results below are the probability of the logit table with column and row headers.
 ```{r Probability Logit Table Clean-up}
-prop.table(predlogitlm_table)
+#This code will add row and column names to the Logit Table you created above.
+
 rownames(predlogitlm_table) <- c("Predicted 0","Predicted 1")
 colnames(predlogitlm_table) <- c("Actually 0", "Actually1")
+print(prop.table(predlogitlm_table))
 ```
 
-**Results:**
+
+*Logit Probability Results:*
             
               Actually 0  Actually1
   Predicted 0 0.86010441 0.01690805
@@ -233,7 +459,9 @@ colnames(predlogitlm_table) <- c("Actually 0", "Actually1")
 
 Within the predicted probabilities/Logit model approximately 86% of those cars predicted were actually not a lemon and 2% were lemons a slight but insignificant increase in lemons.  Of those cars in the logit model predicted to not be a lemon, 9% were not lemons and 3% were lemons.  
 
-#Question #7: Create a confusion matrix from your linear model and your logit model.
+
+
+#**Question #7: Create a confusion matrix from your linear model and your logit model.**
 
 ```{r Confusion Matrix from Linear Model}
 ModelMetrics::confusionMatrix(training$IsBadBuy,training$pred_lm_out)
@@ -242,7 +470,40 @@ caret::confusionMatrix(as.factor(training$IsBadBuy),as.factor(training$pred_lm_o
 #to get the confusion matrix to work you need to make sure both variables are set as a factor
 ```
 
-```{r Confusion Matrix from Logit Model, echo=TRUE}
+**Confusion Matrix Linear Model**
+
+     [,1]  [,2]
+[1,]    0 63070
+[2,]    0   937
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     0     1
+         0 63070   937
+         1  6738  2238
+                                          
+               Accuracy : 0.8948          
+                 95% CI : (0.8926, 0.8971)
+    No Information Rate : 0.9565          
+    P-Value [Acc > NIR] : 1               
+                                          
+                  Kappa : 0.325           
+                                          
+ Mcnemar's Test P-Value : <2e-16          
+                                          
+            Sensitivity : 0.9035          
+            Specificity : 0.7049          
+         Pos Pred Value : 0.9854          
+         Neg Pred Value : 0.2493          
+             Prevalence : 0.9565          
+         Detection Rate : 0.8642          
+   Detection Prevalence : 0.8770          
+      Balanced Accuracy : 0.8042          
+                                          
+       'Positive' Class : 0 
+
+
+```{r Confusion Matrix from Logit Model}
 
 ModelMetrics::confusionMatrix(training$IsBadBuy,training$pred_logitlm_out)
 caret::confusionMatrix(as.factor(training$IsBadBuy),as.factor(training$pred_logitlm_out))
@@ -250,7 +511,38 @@ caret::confusionMatrix(as.factor(training$IsBadBuy),as.factor(training$pred_logi
 #to get the confusion matrix to work you need to make sure both variables are set as a factor
 ```
 
-**Results:**
+**Confusion Matrix Logit Model**
+
+    [,1]  [,2]
+[1,]    0     0
+[2,]    0 64007
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     0     1
+         0 62773  1234
+         1  6627  2349
+                                        
+               Accuracy : 0.8923        
+                 95% CI : (0.89, 0.8945)
+    No Information Rate : 0.9509        
+    P-Value [Acc > NIR] : 1             
+                                        
+                  Kappa : 0.3268        
+                                        
+ Mcnemar's Test P-Value : <2e-16        
+                                        
+            Sensitivity : 0.9045        
+            Specificity : 0.6556        
+         Pos Pred Value : 0.9807        
+         Neg Pred Value : 0.2617        
+             Prevalence : 0.9509        
+         Detection Rate : 0.8601        
+   Detection Prevalence : 0.8770        
+      Balanced Accuracy : 0.7801        
+                                        
+       'Positive' Class : 0  
+
 
 The two confusion matrices above represent counts of true & false presences and absences.
 
