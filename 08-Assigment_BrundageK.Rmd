@@ -60,7 +60,7 @@ For this assignment, you'll be using the lemons dataset, which is a subset of th
 
 Your job is to predict which cars are most likely to be lemons.
 
-#**Question #1: Calculate the proportion of lemons in the training dataset using the IsBadBuy variable.**
+**Question #1: Calculate the proportion of lemons in the training dataset using the IsBadBuy variable.**
 
 ```{r Create Table}
 ibb <- table(training$IsBadBuy)
@@ -104,11 +104,14 @@ descrip <- training%>%
 pander(descrip)
 ```
 
+
 *Descriptives*
-  * | IsBadBuy|     n|         p|
-  * |--------:|-----:|---------:|
-  * |        0| 64007| 0.8770125|
-  * |        1|  8976| 0.1229875|
+
+| IsBadBuy|     n|         p|
+|--------:|-----:|---------:|
+|        0| 64007| 0.8770125|
+|        1|  8976| 0.1229875|
+
 
 0: 64,007 = 88%
 
@@ -117,7 +120,7 @@ pander(descrip)
 Based on the count of the data in the Is a Bad Buy column around 88% (87.7) of the sample were not lemons and about 12% (12.3) were lemons.
 
 
-#**Question #2: Calculate the proportion of lemons by Make.**
+**Question #2: Calculate the proportion of lemons by Make.**
 
 ```{r Conditional Mean by Make of Car}
 #Predictions using Conditional Means
@@ -129,7 +132,8 @@ pander(make)
 ```
 
 *Results by Make*
--------------------------------
+
+
 Make             mean(IsBadBuy)
 -------------- ----------------
 ACURA                  0.272727
@@ -206,41 +210,7 @@ makeper <- prop.table(table(training$Make,training$IsBadBuy),margin=1)
 print(makeper)
 ```
 
-*Cross-Tabulate by Make*
-                        0          1
-  ACURA        0.72727273 0.27272727
-  BUICK        0.84305556 0.15694444
-  CADILLAC     0.84848485 0.15151515
-  CHEVROLET    0.90253942 0.09746058
-  CHRYSLER     0.87143826 0.12856174
-  DODGE        0.89676270 0.10323730
-  FORD         0.84590889 0.15409111
-  GMC          0.88443760 0.11556240
-  HONDA        0.89134809 0.10865191
-  HUMMER       1.00000000 0.00000000
-  HYUNDAI      0.87134180 0.12865820
-  INFINITI     0.66666667 0.33333333
-  ISUZU        0.93283582 0.06716418
-  JEEP         0.84549878 0.15450122
-  KIA          0.88244767 0.11755233
-  LEXUS        0.64516129 0.35483871
-  LINCOLN      0.70103093 0.29896907
-  MAZDA        0.83861083 0.16138917
-  MERCURY      0.83023001 0.16976999
-  MINI         0.66666667 0.33333333
-  MITSUBISHI   0.88058252 0.11941748
-  NISSAN       0.84028777 0.15971223
-  OLDSMOBILE   0.79835391 0.20164609
-  PLYMOUTH     0.50000000 0.50000000
-  PONTIAC      0.88093001 0.11906999
-  SATURN       0.85852982 0.14147018
-  SCION        0.91472868 0.08527132
-  SUBARU       0.78571429 0.21428571
-  SUZUKI       0.85316265 0.14683735
-  TOYOTA       0.90034965 0.09965035
-  TOYOTA SCION 1.00000000 0.00000000
-  VOLKSWAGEN   0.85820896 0.14179104
-  VOLVO        1.00000000 0.00000000
+
 
 ```{r G Table by Make}
 #Table showing by Make of car the number that were not lemons and the number that are lemons.
@@ -249,45 +219,9 @@ print(g_table)
 
 ```
 
-*G-Table by Make*
-                  0     1
-  ACURA           24     9
-  BUICK          607   113
-  CADILLAC        28     5
-  CHEVROLET    15567  1681
-  CHRYSLER      7707  1137
-  DODGE        11579  1333
-  FORD          9563  1742
-  GMC            574    75
-  HONDA          443    54
-  HUMMER           1     0
-  HYUNDAI       1578   233
-  INFINITI        28    14
-  ISUZU          125     9
-  JEEP          1390   254
-  KIA           2192   292
-  LEXUS           20    11
-  LINCOLN         68    29
-  MAZDA          821   158
-  MERCURY        758   155
-  MINI            16     8
-  MITSUBISHI     907   123
-  NISSAN        1752   333
-  OLDSMOBILE     194    49
-  PLYMOUTH         1     1
-  PONTIAC       3751   507
-  SATURN        1857   306
-  SCION          118    11
-  SUBARU          22     6
-  SUZUKI        1133   195
-  TOYOTA        1030   114
-  TOYOTA SCION     1     0
-  VOLKSWAGEN     115    19
-  VOLVO           37     0
-  
-  
 
-#**Question #3: Now, predict the probability of being a lemon using a linear model (lm(y~x), with covariates of your choosing from the training dataset.**
+
+**Question #3: Now, predict the probability of being a lemon using a linear model (lm(y~x), with covariates of your choosing from the training dataset.**
 
 ```{r Linear Model}
 # Is Bad Buy versus if the vehicle was an online sale, the age of the vehicle, wheeltype and make of the vehicle.
@@ -297,6 +231,7 @@ lm_mod <- lm(training$IsBadBuy~training$VehicleAge+
                training$WheelType+
                training$Make,
              data=training,y=T,na.exclude=T)
+Summary(lm_mod)
 ```
 
 ```{r Call LM Summary}
@@ -308,7 +243,7 @@ lm(formula = training$IsBadBuy ~ training$VehicleAge + training$IsOnlineSale +
 In review of the data we see that being an online sale appears to be statistically significant.
 
 
-#**Question #4: Make predictions from the linear model.**
+**Question #4: Make predictions from the linear model.**
 
 After creating predictions, we're going to classify everyone with a predicted probablity above .5 as being predicted to get a car that is a lemon, while everyone with a predicted probability below .5 is predicted to not get one. We'll compare our classifications with the actual data. 
 
@@ -430,10 +365,13 @@ predlogitlm_table <- table(training$IsBadBuy,training$pred_logitlm_out)
 
 print(predlogitlm_table)
 ```
-
+----------------
        0     1
+-------- -------       
   0 62773  1234
+-------- -------
   1  6627  2349
+----------------
 
 *Predicted Outcome: No Lemon*
 62,773 did not receive a car that was a lemon and 1,234 did receive a car that was a lemon
@@ -452,10 +390,14 @@ print(prop.table(predlogitlm_table))
 
 
 *Logit Probability Results:*
-            
+ 
+--------------------------------------           
               Actually 0  Actually1
+------------- ---------- -------------
   Predicted 0 0.86010441 0.01690805
+------------- ---------- -------------  
   Predicted 1 0.09080197 0.03218558
+--------------------------------------
 
 Within the predicted probabilities/Logit model approximately 86% of those cars predicted were actually not a lemon and 2% were lemons a slight but insignificant increase in lemons.  Of those cars in the logit model predicted to not be a lemon, 9% were not lemons and 3% were lemons.  
 
@@ -511,6 +453,7 @@ caret::confusionMatrix(as.factor(training$IsBadBuy),as.factor(training$pred_logi
 #to get the confusion matrix to work you need to make sure both variables are set as a factor
 ```
 
+
 **Confusion Matrix Logit Model**
 
     [,1]  [,2]
@@ -544,6 +487,7 @@ Prediction     0     1
        'Positive' Class : 0  
 
 
+**In summary**
 The two confusion matrices above represent counts of true & false presences and absences.
 
 For the Linear Model:
