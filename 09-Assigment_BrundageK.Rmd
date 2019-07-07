@@ -1,0 +1,225 @@
+---
+title: "09-Assignment-BrundageK"
+author: "Kelley Brundage"
+affiliation: "Vanderbilt University - Peabody College, Ed.D. Leadership & Learning in Organizations program"
+date: "6/30/2019"
+Github: "https://github.com/klbrundage/LLO8200-Assignments"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+##This code allows the Knit function to still work even with errors 
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, results ='hide',include=TRUE,messages=FALSE)
+
+#We always start with a standard set of setup commands by loading the correct libraries. We will continue to work with our existing libraries and will add 'caret' in order to evaluate the perforance of a classifier.
+
+##Load libraries in order to successfully run the code below - the suppressMessages coding will stop the install.packages information, etc.. from coming up in the Console and showing you what has run.
+
+suppressMessages(library(caret)) #Misc functions for training and plotting classification and regression models.
+suppressMessages(library(dplyr)) #able to select, filter, organize, and manipulate data stored within an R data frame
+suppressMessages(library(evaluate)) #Parsing and Evaluation Tools that Provide More Details than the Default
+suppressMessages(library(forcats)) #Tools for Working with Categorical Variables (Factors)
+suppressMessages(library(formatR)) #Provides a function tidy_source() to format R source code.
+suppressMessages(library(ggplot2)) #A system for 'declaratively' creating graphics, based on "The Grammar of Graphics".
+suppressMessages(library(haven)) #Import foreign statistical formats into R via the embedded 'ReadStat' C library
+suppressMessages(library(knitr))#General-Purpose Package for Dynamic Report Generation in R 
+  opts_chunk$set(comment = NA)
+  def_hook <- knit_hooks$get("output")
+  knit_hooks$set(output = function(x, options)
+    {out <- def_hook(x, options)
+    return(paste("\\begin{framed}\\begin{verbatim}", x, "\\end{verbatim}\\end{framed}",
+                 collapse = "\n"))})
+
+suppressMessages(library(lubridate)) #Functions to work with date-times and time-spans: fast and user friendly parsing of date-time data, extraction and updating of components of a date-time
+suppressMessages(library(ModelMetrics)) #Collection of metrics for evaluating models written in C++ using 'Rcpp'.
+suppressMessages(library(modelr)) #Functions for modelling that help you seamlessly integrate modelling into a pipeline of data manipulation and visualisation.
+suppressMessages(library(pander))#provide a minimal and easy tool for rendering R objects
+  panderOptions('table.style', "multiline")
+  panderOptions('table.alignment.default',function(df)ifelse(sapply(as.data.frame(df),
+                                                            is.numeric), 'right', 'left'))
+
+suppressMessages(library(readxl)) #reads in Excel Files
+suppressMessages(library(rvest)) #scraping websites
+suppressMessages(library(tibble)) #Provides a 'tbl_df' class (the 'tibble') that provides stricter checking and better formatting than the traditional data frame.
+suppressMessages(library(tidyverse)) #set of packages that work in harmony because they share common data representations and 'API' design
+
+##Define My PDF setup
+#This code does not show in the final document but will assist with definining the margin cutoff point and wraps the text to the next line.
+knitr::opts_chunk$set(fig.path = "Figs/", results='hide', tidy.opts=list(width.cutoff=60)) 
+
+  my_pdf = function(file,width,height)
+  {pdf(file, width=width, height=height,pointsize=12)}
+
+##Load the Dataset
+#The code below will load the Carvana Training Dataset which houses the "lemon" or "IsBadBuy" indicator.
+
+library(readxl)
+training <- read_excel("training.xlsx")
+```
+
+
+For this assignment, you'll be using the lemons dataset, which is a subset of the dataset used for a Kaggle competition described here: "https://www.kaggle.com/c/DontGetKicked/data"
+
+**Question #1: Using the lemons dataset, plot the probability of a car being a bad buy by make.**
+
+```{r Cross-tab}
+
+tab_make <- with(training,table(Make,IsBadBuy))
+#with command to make a table that uses a specific set of data
+tab_make
+```
+
+If we want to make this a little better, we can change the row and column titles
+
+```{r Cross-Tab with Row and Column Titles}
+##kable command will output the table in a format that is appropriate for markdown
+
+colnames(tab_make) <- c("Is Not a Bad Buy", "Is a Bad Buy")
+kable(tab_make)
+```
+
+```{r Add Proportions}
+#In general recommends using proportions instead of counts.
+
+tab_make_prop <- prop.table(tab_make, margin = 1)
+kable(tab_make_prop)
+```
+
+```{r Add Percentages}
+#code below will change the proportion to a %
+
+kable(round(tab_make_prop*100,2))
+
+#multiply by 100 and rounds to 2 decimal places
+#warning to not have more than 2 decimal points and when it does it indicates a false sense of percision that doesn't reflect things like measurement error or other items in the data
+```
+
+```{r Probability}
+
+make_sum <- training%>%
+  group_by(Make)%>%
+  summarise(prob_bb=mean(IsBadBuy,na.rm=T))
+```
+
+Then we can plot this using our familiar ggplot commands:
+
+```{r Bar Chart, results="asis"}
+
+gm1 <- ggplot(make_sum, aes(y=prob_bb, x=Make))+
+  geom_bar(stat = "identity", position = "dodge")+
+  labs(title = "Prob of Make of Car Being Bad Buy", x="Make of Vehicle", y="Prob of Bad Buy")+
+  theme(legend.title = element_blank())
+
+gm1 <- gm1+geom_text(aes(label=round(prob_bb,2)),
+                     position = position_dodge(width = .9),
+                     vjust=.25)
+
+gm1
+```
+
+
+**Question #2: Create a table that shows the probability of a car being a bad buy by make.**
+
+```{r Cross-tab for Make of Car}
+
+tab_make <- with(training,table(training$Make,training$IsBadBuy))
+
+#with command is being used to make a table that uses a specific set of data
+```
+
+```{r Rename the Column Headers}
+#the code below will rename the columns
+
+colnames(tab_make)<-c("Not a Bad Buy","Is a Bad Buy")
+kable(tab_make) 
+
+##kable command will output the table in a format that is appropriate for markdown
+```
+
+```{r Proportions table}
+#the code below will make a proportions table from the data above
+
+tab_make_prop <- prop.table(tab_make,margin = 1)
+kable(tab_make_prop)
+```
+
+```{r Change Proportion to %, results="asis"}
+#code below will change the proportion to a %
+
+print(kable(round(tab_make_prop*100,2)),
+      only.contents=T,
+      comment=F,
+      sanitize.colnames.function=identity,
+      sanitize.rownames.function=identity,
+      hline.after=0:2)
+
+```
+
+
+**Question #3:  Create a heatmap of the probability of a car being a bad buy by make and acquisition type.**
+
+```{r Divide IV into Quintiles}
+#the code below will take the data above and divite it into Quintiles preparing for heatmap data
+
+training <- training%>%
+  mutate(Make_quintile=ntile(Make,5),
+         Auction_quintile=ntile(Auction,5))
+```
+
+Then we'll create a summary dataset that shows the probabilities of the outcome across all of the combined categories of the two independent variables. 
+
+```{R Combine Categories of two IV}
+
+make_sum<-training%>%
+  group_by(Make_quintile,Auction_quintile)%>%
+  summarize(prob_make=mean(IsBadBuy,na.rm=TRUE))%>%
+  arrange(-prob_make)
+```
+
+Missing data isn't important, so we'll drop it. 
+
+```{r Drop Missing Data}
+make_sum <- make_sum%>%
+  filter(!(is.na(Make_quintile)), !(is.na(Auction_quintile)))
+```
+
+Now we're ready to plot!
+
+```{r Plot Heatmap, results="asis"}
+
+hm1 <- ggplot(make_sum, aes(x=as.factor(Make_quintile),
+                            y=as.factor(Auction_quintile),fill=prob_make))
+hm1 <- hm1+geom_tile()+
+  scale_fill_gradient(low = "white", high = "red")+
+  labs(title = "Heatmap of Probability of Car Bad Buy by Make & Acquisition Type",
+       x="Make of Car", y="Auction Type", fill="IsBadBuy")+
+  theme(legend.title = element_blank())
+
+hm1
+```
+
+
+**Question #4: Create a plot of your choosing that shows the probability of a car being a bad buy by year and make.**
+
+```{r Q4 Probability}
+
+makeyr_sum <- training%>%
+  group_by(Make, VehYear)%>%
+  summarise(prob_bb=mean(IsBadBuy, na.rm = T))
+```
+
+Now we can plot the probability of a car being a bad buy by year and make
+
+```{r Q4 Bar Chart, results="asis"}
+
+gm1 <- ggplot(makeyr_sum, aes(y=Make, x=VehYear, fill=prob_bb))+
+  geom_bar(stat = "identity", position = "dodge")+
+  labs(title="Probability of a Car Being a Bad Buy by Vehicle Year and Make" ,x="Vehicle Year", y="Make of Car")+
+  theme(legend.title = element_blank())
+
+gm1 <- gm1+geom_text(aes(label=round(prob_bb,2)),
+                     position = position_dodge(width=.9),
+                     vjust=.25)
+
+gm1
+```
