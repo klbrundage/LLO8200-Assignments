@@ -1,7 +1,8 @@
 ---
 title: "10 - Assignment_BrundageK"
 author: "Kelley Brundage"
-affiliation: "Vanderbilt University - Peabody College, Ed.D. Leadership & Learning in Organizations program"
+affiliation: "Vanderbilt University - Peabody College, Ed.D. Leadership & Learning in Organizations program",
+    "LLO 8200: Data Science"
 date: "7/10/2019"
 Github: "https://github.com/klbrundage/LLO8200-Assignments"
 output: pdf_document
