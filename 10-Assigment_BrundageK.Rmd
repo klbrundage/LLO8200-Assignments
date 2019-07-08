@@ -1,0 +1,198 @@
+---
+title: "10 - Assignment_BrundageK"
+author: "Kelley Brundage"
+affiliation: "Vanderbilt University - Peabody College, Ed.D. Leadership & Learning in Organizations program"
+date: "7/10/2019"
+Github: "https://github.com/klbrundage/LLO8200-Assignments"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+##This code allows the Knit function to still work even with errors 
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, results ='hide',include=TRUE,messages=FALSE)
+
+#We always start with a standard set of setup commands by loading the correct libraries. We will continue to work with our existing libraries and will add 'caret' in order to evaluate the perforance of a classifier.
+
+##Load libraries in order to successfully run the code below - the suppressMessages coding will stop the install.packages information, etc.. from coming up in the Console and showing you what has run.
+
+suppressMessages(library(caret)) #Misc functions for training and plotting classification and regression models.
+suppressMessages(library(dplyr)) #able to select, filter, organize, and manipulate data stored within an R data frame
+suppressMessages(library(evaluate)) #Parsing and Evaluation Tools that Provide More Details than the Default
+suppressMessages(library(forcats)) #Tools for Working with Categorical Variables (Factors)
+suppressMessages(library(formatR)) #Provides a function tidy_source() to format R source code.
+suppressMessages(library(ggplot2)) #A system for 'declaratively' creating graphics, based on "The Grammar of Graphics".
+suppressMessages(library(haven)) #Import foreign statistical formats into R via the embedded 'ReadStat' C library
+suppressMessages(library(knitr))#General-Purpose Package for Dynamic Report Generation in R 
+  opts_chunk$set(comment = NA)
+  def_hook <- knit_hooks$get("output")
+  knit_hooks$set(output = function(x, options)
+    {out <- def_hook(x, options)
+    return(paste("\\begin{framed}\\begin{verbatim}", x, "\\end{verbatim}\\end{framed}",
+                 collapse = "\n"))})
+
+suppressMessages(library(lubridate)) #Functions to work with date-times and time-spans: fast and user friendly parsing of date-time data, extraction and updating of components of a date-time
+suppressMessages(library(ModelMetrics)) #Collection of metrics for evaluating models written in C++ using 'Rcpp'.
+suppressMessages(library(modelr)) #Functions for modelling that help you seamlessly integrate modelling into a pipeline of data manipulation and visualisation.
+suppressMessages(library(pander))#provide a minimal and easy tool for rendering R objects
+  panderOptions('table.style', "multiline")
+  panderOptions('table.alignment.default',function(df)ifelse(sapply(as.data.frame(df),
+                                                            is.numeric), 'right', 'left'))
+
+suppressMessages(library(readxl)) #reads in Excel Files
+suppressMessages(library(rvest)) #scraping websites
+suppressMessages(library(tibble)) #Provides a 'tbl_df' class (the 'tibble') that provides stricter checking and better formatting than the traditional data frame.
+suppressMessages(library(tidyverse)) #set of packages that work in harmony because they share common data representations and 'API' design
+
+##Define My PDF setup
+#This code does not show in the final document but will assist with definining the margin cutoff point and wraps the text to the next line.
+knitr::opts_chunk$set(fig.path = "Figs/", results='hide', tidy.opts=list(width.cutoff=60)) 
+
+  my_pdf = function(file,width,height)
+  {pdf(file, width=width, height=height,pointsize=12)}
+
+##Load the Dataset
+#The code below will load the ELS Training and Testing Datasets used in Assignment #5
+
+
+load("els_train.RData")
+load("els_test.RData")
+```
+
+
+Based on your work in assignment 5, do the following:
+
+# *Question 1: Create a 10-fold cross validation of your linear model predicting reading scores as a function of at least two covariates. Provide a summary table or graphic of the RMSEs from this cross validation.
+
+```{r Simple Model Prediction}
+#simple model that predicts reading scores as a function of Socioeconomic status and Race.
+
+els_train <- els_train%>%
+  select(bynels2r,byses1,byrace)%>%
+  mutate(read_rank=percent_rank(bynels2r))%>%
+  tbl_df()
+```
+
+```{r Plot Prediction, results="asis"}
+
+el1 <- ggplot(els_train, aes(x=byses1, y=read_rank))+
+  geom_point()+
+  labs(title = "Simple Model Prediction: Reading Scores as function of SES and Race", x="Socioeconomic Status", y="Reading Rank")
+
+el1
+```
+
+We can run this model on the full dataset, but we're not taking advantage of the idea of cross-validation. 
+
+```{r Define & Run Model}
+## Define the model
+
+mod1_formula<-formula(read_rank~byses1+
+                        byrace)
+## Run the model against all of the data
+basic.mod<-lm(mod1_formula,
+              data=els_train) 
+
+print(summary(basic.mod),
+      only.contents=T,
+      comment=F,
+      sanitize.colnames.function=identity,
+      sanitize.rownames.function=identity,
+      hline.after=0:3)
+
+```
+
+The `crossv_kfold` command creates a list of datasets from our original dataset, each of which contains a testing and training dataset. The proportion of cases held out for testing is determined by the number of folds: 10 folds would indicate 1/10 of the data to be held out. 
+
+```{r Kfold with 10 folds}
+
+els_train_cf <- els_train%>%
+  crossv_kfold(10)
+
+print(els_train_cf,
+      only.contents=T,
+      comment=F,
+      sanitize.colnames.function=identity,
+      sanitize.rownames.function=identity,
+      hline.after=0:3)
+```
+
+
+```{r Convert Training to Tibbles}
+
+rmse_mod1 <- els_train_cf%>%
+  mutate(train = map(train, as_tibble))%>% ##converts to tibbles
+  mutate(model = map(train, ~lm(mod1_formula, data = .)))%>%
+  mutate(rmse = map2_dbl(model, test, rmse))%>% ##apply model, get rmse
+  select(.id, rmse) ##pull just id and rmse
+
+rmse_mod1
+```
+Generate RMSE for Model1
+```{r Model1 RMSE}
+#The code below will print the RMSE calculated for Model 1
+
+print(summary(rmse_mod1$rmse,
+      only.contents=T,
+      comment=F,
+      sanitize.colnames.function=identity,
+      sanitize.rownames.function=identity,
+      hline.after=0:2))
+```
+
+
+The resulting dataset includes the id for the cross validation and the rmse. We can summarize and plot this new data frame to see what our likely range of rmse happens to be. 
+
+```{r Plot RMSE dataframe, results="asis"}
+
+gr1 <- ggplot(rmse_mod1, aes(rmse))+
+  geom_density(bin=50, fill="sienna", alpha=.2)+
+  labs(title = "Density Plot for RMSE Dataframe", x="RMSE", y="Density")
+
+gr1
+```
+
+
+# *Question 2: Using a random partition, create 100 separate cross validations of your linear model predicting reading scores as a function of at least two covariates.  Provide a summary table or graphic of the RMSEs from this cross validation.
+
+```{r Generalize Crossfold data}
+
+els_train_cv <- els_train%>%
+  crossv_mc(n=1000, test=.2)##prop of data to be held out - 20% or 1,000 rows to test
+
+els_train_cv
+```
+
+The `els_train_cv` dataset is a dataset of 1000x2 datasets, with each row containing a training and testing dataset. The testing dataset is .2 or 20% of the sample, but it's different each time. 
+
+```{r Model1 RMSE CV}
+#Now we use the same approach, but with the MUCH larger qf_cv dataset. This will take a bit of time. 
+
+mod1_rmse_cv<-els_train_cv %>% 
+  mutate(train = map(train, as_tibble)) %>% ## Convert to tibbles
+  mutate(model = map(train, ~ lm(mod1_formula, data = .)))%>%
+  mutate(rmse = map2_dbl(model, test, rmse))%>% 
+  select(.id, rmse) ## pull just id and rmse 
+
+mod1_rmse_cv
+```
+
+```{r Summary of Model 1 RMSE CV}
+print(summary(mod1_rmse_cv$rmse,
+              only.contents=T,
+              comment=F,
+              sanitize.colnames.function=identity,
+              sanitize.rownames.function=identity,
+              hline.after=0:2))
+```
+
+
+```{r Summary & Plot of Model1 RMSE CV, results="asis"}
+
+
+
+gr2 <- ggplot(mod1_rmse_cv, aes(rmse))+
+  geom_density(bin=50, fill="thistle", alpha=.2)+
+  labs(title = "Plot of Model 1 RMSE Cross Validation", x="RMSE", y="Density")
+
+gr2
+```
