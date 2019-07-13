@@ -1,0 +1,258 @@
+---
+title: "11-Assignment BrundageKelley"
+author: "Kelley Brundage"
+date: "7/24/2019"
+Github: "https://github.com/klbrundage/LLO8200-Assignments"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE,warning=FALSE,results='hide',include=TRUE,messages=FALSE)
+
+##We always start with a standard set of setup commands by loading the correct libraries. We will continue to work with our existing libraries and will add 'caret' in order to evaluate the perforance of a classifier.
+
+##Load libraries in order to successfully run the code below - the suppressMessages coding will stop the install.packages information, etc.. from coming up in the Console and showing you what has run.
+
+suppressMessages(library(caret)) #Misc functions for training and plotting classification and regression models.
+suppressMessages(library(dplyr)) #able to select, filter, organize, and manipulate data stored within an R data frame
+suppressMessages(library(evaluate)) #Parsing and Evaluation Tools that Provide More Details than the Default
+suppressMessages(library(forcats)) #Tools for Working with Categorical Variables (Factors)
+suppressMessages(library(formatR)) #Provides a function tidy_source() to format R source code.
+suppressMessages(library(ggplot2)) #A system for 'declaratively' creating graphics, based on "The Grammar of Graphics".
+suppressMessages(library(haven)) #Import foreign statistical formats into R via the embedded 'ReadStat' C library
+suppressMessages(library(knitr))#General-Purpose Package for Dynamic Report Generation in R 
+  opts_chunk$set(comment = NA)
+  def_hook <- knit_hooks$get("output")
+  knit_hooks$set(output = function(x, options)
+    {out <- def_hook(x, options)
+    return(paste("\\begin{framed}\\begin{verbatim}", x, "\\end{verbatim}\\end{framed}",
+                 collapse = "\n"))})
+
+suppressMessages(library(lubridate)) #Functions to work with date-times and time-spans: fast and user friendly parsing of date-time data, extraction and updating of components of a date-time
+suppressMessages(library(ModelMetrics)) #Collection of metrics for evaluating models written in C++ using 'Rcpp'.
+suppressMessages(library(modelr)) #Functions for modelling that help you seamlessly integrate modelling into a pipeline of data manipulation and visualisation.
+suppressMessages(library(pander))#provide a minimal and easy tool for rendering R objects
+  panderOptions('table.style', "multiline")
+  panderOptions('table.alignment.default',function(df)ifelse(sapply(as.data.frame(df),
+                                                            is.numeric),'right','left'))
+
+suppressMessages(library(readxl)) #reads in Excel Files
+suppressMessages(library(rvest)) #scraping websites
+suppressMessages(library(tibble)) #Provides a 'tbl_df' class (the 'tibble') that provides stricter checking and better formatting than the traditional data frame.
+suppressMessages(library(tidyverse)) #set of packages that work in harmony because they share common data representations and 'API' design
+suppressMessages(library(tictoc))#his package provides the timing functions 'tic' and 'toc' that can be nested. One can record all timings while a complex script is running, and examine the values later.
+
+##Special libraries used for Assignment #11
+suppressMessages(library(nycflights13))
+suppressMessages(library(RSQLite))
+
+##Define My PDF setup
+#This code does not show in the final document but will assist with definining the margin cutoff point and wraps the text to the next line.
+
+knitr::opts_chunk$set(fig.path = "Figs/", results='hide', tidy.opts=list(width.cutoff=60)) 
+  my_pdf = function(file,width,height)
+  {pdf(file, width=width, height=height,pointsize=12)}
+
+##Open the tables from Data sources from NYC flights
+data(flights)
+data(airlines)
+data(airports)
+data(weather)
+data(planes)
+```
+
+
+# Question 1:  
+
+## *Using the nyclfights13 library, open all of the data tables and turn them into a database. Make sure to include flights, airlines, airports, weather and planes.**  
+
+```{r Connect to Databases}
+
+con <- dbConnect(RSQLite::SQLite(), ":memory:")
+
+##Write flights tables to database (you won't usually do this)
+##con = connection - opening up a connection to the db
+
+dbWriteTable(con,
+             "flights", 
+             as.data.frame(flights))
+
+dbWriteTable(con,
+             "planes", 
+             as.data.frame(planes))
+
+dbWriteTable(con,
+             "airlines", 
+             as.data.frame(airlines))
+
+dbWriteTable(con,
+             "weather", 
+             as.data.frame(weather))
+
+dbWriteTable(con,
+             "airports", 
+             as.data.frame(airports))
+```
+
+List of Tables in the Recently created Databases:  
+
+```{r Table Access}
+#List tables in database
+
+pander(dbListTables(con))
+```
+
+
+List of Fields within each of the Databases:  
+
+Airline Database Fields:  
+```{r Airlines Database, results='asis'}
+##List fields within airlines database
+
+pander(dbListFields(con,"airlines"))
+```
+
+Airports Database Fields:  
+```{r Airports Database, results='asis'}
+##List fields within airports database
+
+pander(dbListFields(con,"airports"))
+```
+
+
+Flights Database Fields:  
+```{r Flights Database, results='asis'}
+##List fields within flights database
+
+pander(dbListFields(con,"flights"))
+```
+
+Planes Database Fields:  
+```{r Planes Database, results='asis'}
+##List fields within planes database
+
+pander(dbListFields(con,"planes"))
+```
+
+Weather Database Fields:
+```{r Weather Database Fields, results='asis'}
+##List fields within weather database
+
+pander(dbListFields(con,"weather"))
+```
+
+
+# Question 2:  
+
+## *Create a data frame from a SQL pull from the database that consists only of flights that took off from JFK in May.*  
+
+```{r Get text and turn into db}
+#Generate a SQL request to a database
+req_text <- "Select * from flights"
+
+#Send query through connection
+req <- dbSendQuery(con,req_text)
+
+#Generate dataframe from results
+req_df <- dbFetch(req,n=-1)
+
+#Good practice: clear request
+dbClearResult(req)
+
+```
+
+Flights Generated Dataframe:  
+  
+```{r Flights Generated Dataframe, results='asis'}
+dim(req_df)
+
+head(req_df,20)
+```
+
+Only flights that took off from JFK in the month of May (5) contained within the flights dataframe:  
+  
+```{r Flights Origin and Month, results='asis'}
+
+req1_text <- "SELECT f.origin, f.month 
+            FROM flights f 
+            WHERE f.month=5 and f.origin='JFK'
+            "
+req1 <- dbSendQuery(con,req1_text)
+
+req1_df <- dbFetch(req1,n=-1)
+
+dbClearResult(req1)
+
+head(req1_df)
+```
+
+
+# Question 3:  
+
+## *Create a data frame from a SQL pull from the database that consists only of flights that took off on-time (a delay of less than 10 minutes) from Newark at temperatures of less than 40 degrees F.*  
+
+```{r Flights from Newark, results='asis'}
+
+req1_text <- "SELECT f.origin
+              FROM flights f
+              "
+
+req1 <- dbSendQuery(con,req1_text)
+
+req1_df <- dbFetch(req1,n=-1)
+
+dbClearResult(req1)
+
+head(req1_df) 
+```
+
+
+```{r Combine Flight with Weather, results='asis'}
+#SQL request, flight info combined with weather info
+
+weather_text <- "SELECT f.origin, f.dep_delay, w.temp
+              FROM weather w
+              JOIN flights f
+              ON f.year=w.year
+              AND f.month=w.month
+              AND f.day=w.day
+              WHERE f.origin='LGA' and f.dep_delay<10 AND w.temp<40"
+
+weather_req <- dbSendQuery(con,weather_text)
+
+weather_df <- dbFetch(weather_req,n=-1)
+
+dbClearResult(weather_req)
+
+head(weather_df)
+```
+
+
+# Question 4:  
+
+## *Create data frame from a SQL pull from the database that consists of planes flown by United.*
+
+```{r Airline data from Airline table}
+
+req1_text <- "SELECT a.carrier, a.name
+              FROM airlines a
+              "
+
+```
+
+```{r Planes Flown by United, results='asis'}
+req1_text<-"SELECT a.carrier, a.name, f.carrier, f.tailnum, p.tailnum 
+            FROM airlines a, planes p
+            JOIN flights f 
+            ON f.tailnum=p.tailnum
+            AND f.carrier=a.carrier
+            WHERE a.carrier='UA'
+            "
+req1<-dbSendQuery(con,req1_text)
+
+req1_df<-dbFetch(req1,n=-1)
+
+dbClearResult(req1)
+
+head(req1_df)
+```
