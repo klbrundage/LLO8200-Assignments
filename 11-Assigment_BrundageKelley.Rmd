@@ -183,7 +183,7 @@ req1_df <- dbFetch(req1,n=-1)
 
 dbClearResult(req1)
 
-head(req1_df)
+pander(head(req1_df))
 ```
 
 
@@ -191,7 +191,7 @@ head(req1_df)
 
 ## *Create a data frame from a SQL pull from the database that consists only of flights that took off on-time (a delay of less than 10 minutes) from Newark at temperatures of less than 40 degrees F.*  
 
-```{r Flights from Newark, results='asis'}
+```{r Flights Database, results='asis'}
 
 req1_text <- "SELECT f.origin
               FROM flights f
@@ -203,7 +203,7 @@ req1_df <- dbFetch(req1,n=-1)
 
 dbClearResult(req1)
 
-head(req1_df) 
+pander(head(req1_df))
 ```
 
 
@@ -224,7 +224,7 @@ weather_df <- dbFetch(weather_req,n=-1)
 
 dbClearResult(weather_req)
 
-head(weather_df)
+pander(head(weather_df))
 ```
 
 
@@ -254,5 +254,5 @@ req1_df<-dbFetch(req1,n=-1)
 
 dbClearResult(req1)
 
-head(req1_df)
+pander(head(req1_df))
 ```
